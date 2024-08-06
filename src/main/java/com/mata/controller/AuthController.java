@@ -45,21 +45,22 @@ public class AuthController {
      */
     @PostMapping("/user/login/otp")
     public Result<String> loginByOpt(@RequestParam("email") @Email(message = "请输入正确的邮箱") @NotBlank(message = "请输入正确的邮箱") String email,
-                                     @RequestParam("code") @NotBlank(message = "请输入验证码") String code) {
+                                     @RequestParam("code") @NotBlank(message = "请输入验证码") @Length(max = 6,message = "验证码和邮箱不对应") String code) {
         return authService.loginByOpt(email, code);
     }
 
     /**
-     *  修改密码
-     * @param email 邮箱
-     * @param code 验证码
+     * 修改密码
+     *
+     * @param email    邮箱
+     * @param code     验证码
      * @param password 修改的密码
      */
     @PutMapping("/password")
     public Result changePassword(@RequestParam("email") @Email(message = "请输入正确的邮箱") @NotBlank(message = "请输入正确的邮箱") String email,
                                  @RequestParam("code") @NotBlank(message = "请输入验证码") String code,
-                                 @RequestParam("password") @Length(message = "密码长度要大于5，小于30",min = 5,max = 30) @NotBlank(message = "请输入密码") String password){
-        return authService.changePasswordMessage(email,code,password);
+                                 @RequestParam("password") @Length(message = "密码长度要大于5，小于30", min = 5, max = 30) @NotBlank(message = "请输入密码") String password) {
+        return authService.changePasswordMessage(email, code, password);
     }
 
 
@@ -70,7 +71,22 @@ public class AuthController {
      */
     @PostMapping("/user/login")
     public Result<String> loginByPassword(@RequestParam("account") @NotBlank(message = "请输入账号或邮箱") String account,
-                                          @RequestParam("password") @NotBlank(message = "请输入密码") String password) {
-        return authService.loginByPassword(account,password);
+                                          @RequestParam("password")
+                                          @Length(min = 5,max = 30,message = "密码长度大于5，小于30")
+                                          @NotBlank(message = "请输入密码") String password) {
+        return authService.loginByPassword(account, password);
+    }
+
+    /**
+     * 管理员登录
+     * @param id 管理员id
+     * @param password 管理员密码
+     */
+    @PostMapping("/admin/login")
+    public Result<String> adminLogin(@RequestParam("id") @NotBlank(message = "请输入账号或邮箱") String id,
+                                     @RequestParam("password")
+                                     @Length(min = 5,max = 30,message = "密码长度大于5，小于30")
+                                     @NotBlank(message = "请输入密码")String password) {
+        return authService.adminLogin(id,password);
     }
 }

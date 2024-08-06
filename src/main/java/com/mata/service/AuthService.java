@@ -50,4 +50,11 @@ public interface AuthService {
      * @return token字符串
      */
     Result<String> loginByPassword(String account, String password);
+
+    /**
+     * 管理员登录
+     * @param id 管理员id
+     * @param password 管理员密码
+     */
+    Result<String> adminLogin(String id, String password);
 }

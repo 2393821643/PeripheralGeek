@@ -13,9 +13,12 @@ import lombok.*;
 @Builder
 @TableName("tb_admin")
 public class Admin {
-    @TableId(value="book_id", type= IdType.NONE)
+    @TableId(value="admin_id", type= IdType.AUTO)
     private Integer adminId;
 
-    @TableField("book_name")
+    @TableField("admin_Name")
     private String adminName;
+
+    @TableField("password")
+    private String password;
 }
