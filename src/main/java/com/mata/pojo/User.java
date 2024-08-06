@@ -14,7 +14,10 @@ import lombok.*;
 @TableName("tb_user")
 public class User {
     @TableId(value="user_id", type= IdType.AUTO)
-    private Integer user_id; // 用户id
+    private Integer userId; // 用户id
+
+    @TableField("username")
+    private String username;
 
     @TableField("password")
     private String password; // 用户密码

@@ -14,4 +14,12 @@ public interface AuthService {
      * @param email 发送验证码到此邮箱
      */
     void sendLoginCode(String email);
+
+    /**
+     * 通过验证码登录
+     * @param email 邮箱
+     * @param code 验证码
+     * @return token字符串
+     */
+    Result<String> loginByOpt(String email, String code);
 }

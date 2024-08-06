@@ -1,7 +1,11 @@
 package com.mata.service.impl;
 
 import cn.hutool.core.util.RandomUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.mata.config.JwtUtil;
+import com.mata.dao.UserDao;
 import com.mata.dto.Result;
+import com.mata.pojo.User;
 import com.mata.service.AuthService;
 import com.mata.utils.EmailMessage;
 import com.mata.utils.RedisCommonKey;
@@ -25,6 +29,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private UserDao userDao;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     /**
      * 发送登录验证码 异步 发送到消息队列
@@ -50,6 +60,34 @@ public class AuthServiceImpl implements AuthService {
         stringRedisTemplate.opsForValue().set(RedisCommonKey.LOGIN_CODE_PER_KEY+email,code,RedisCommonKey.LOGIN_CODE_TIME, TimeUnit.MINUTES);
         // 向此邮箱发送验证码
         sendEmailUtil.sendEmail(email,EmailMessage.TITLE,EmailMessage.SEND_LOGIN_CODE_MESSAGE_FOREBODY+code+EmailMessage.SEND_LOGIN_CODE_MESSAGE_BEHINDBODY);
+    }
+
+    /**
+     * 通过验证码登录
+     * @param email 邮箱
+     * @param code 验证码
+     * @return token字符串
+     */
+    @Override
+    public Result<String> loginByOpt(String email, String code) {
+        // 查找此邮箱是否存在用户
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(User::getUserId)
+                        .eq(User::getEmail,email);
+        User user = userDao.selectOne(wrapper);
+        // 不存在创建一个
+        if (user == null){
+            user = User.builder()
+                    .username("用户" + RandomUtil.randomString(6))
+                    .password(RandomUtil.randomString(12))
+                    .sex("男")
+                    .email(email)
+                    .build();
+            userDao.insert(user);
+        }
+        // 将userId存入token 并返回
+        String token = jwtUtil.createToken(user.getUserId());
+        return Result.success(token,"登录成功");
     }
 
 
