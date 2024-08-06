@@ -27,4 +27,16 @@ public class SendCodeListener {
     public void listenSendLoginCode(String email){
         authService.sendLoginCode(email);
     }
+
+    /**
+     * 发送修改密码验证码的队列
+     */
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = "sendChangePasswordCode"),
+            exchange = @Exchange(name = "sendCodeExchange",type = ExchangeTypes.DIRECT),
+            key = {"sendChangePasswordCode"}
+    ))
+    public void listenSendChangePasswordCode(String email){
+        authService.sendChangePasswordCode(email);
+    }
 }

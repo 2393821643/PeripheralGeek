@@ -55,7 +55,7 @@ spring:
     protocol: smtps
     properties:
       mail:
-        debug: true
+        debug: false
         smtp:
           from: ${mata.mail.properties.mail.smtp.from}
           ssl:
