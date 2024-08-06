@@ -98,6 +98,11 @@
             <artifactId>alipay-sdk-java</artifactId>
             <version>4.34.0.ALL</version>
         </dependency>
+<!--        字段验证-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
 
     </dependencies>
 

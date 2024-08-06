@@ -14,7 +14,7 @@ public class SendEmailUtil {
     @Value("${spring.mail.username}")
     private String from;
 
-    public void SendEmail(String to, String title, String text){
+    public void sendEmail(String to, String title, String text){
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(to);
