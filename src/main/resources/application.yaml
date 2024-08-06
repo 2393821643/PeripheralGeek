@@ -1,0 +1,86 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ReadShareAndBuy
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:mysql://${mata.mysql.ip}:${mata.mysql.port}/${mata.mysql.db}?useSSL=false
+    username: ${mata.mysql.username}
+    password: ${mata.mysql.password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  redis:
+    host: ${mata.redis.ip}
+    port: ${mata.redis.port}
+    password: ${mata.redis.password}
+    lettuce:
+      pool:
+        max-active: 10
+        max-idle: 10
+        min-idle: 1
+        time-between-eviction-runs: 10s
+    database: 0
+
+  rabbitmq:
+    host: ${mata.rabbitmq.host}
+    port: ${mata.rabbitmq.port}
+    virtual-host: /
+    username: ${mata.rabbitmq.username}
+    password: ${mata.rabbitmq.password}
+
+  servlet:
+    multipart:
+      max-request-size: 10MB
+      max-file-size: 10MB
+
+  mail:
+    host: ${mata.mail.host}
+    port: 465
+    username: ${mata.mail.username}
+    password: ${mata.mail.password}
+    protocol: smtps
+    properties:
+      mail:
+        debug: true
+        smtp:
+          from: ${mata.mail.properties.mail.smtp.from}
+          ssl:
+            enabled: true
+            socketFactory:
+              fallback: false
+              class: javax.net.ssl.SSLSocketFactory
+          auth: true
+          starttls:
+            enabled: true
+            required: true
+    default-encoding: utf-8
+
+file:
+  path: ${mata.file.path}
+
+jwt:
+  admin-secret-key: ${mata.jwt.admin-secret-key}
+  admin-ttl: ${mata.jwt.admin-ttl}
+
+tx-client:
+  secretId: ${mata.tx-client.secretId}
+  secretKey: ${mata.tx-client.secretKey}
+  regionName: ${mata.tx-client.regionName}
+  bucketName: ${mata.tx-client.bucketName}
+  fileMkdir: ${mata.tx-client.fileMkdir}
+
+es:
+  host: ${mata.es.host}
+
+zfb:
+  url: ${mata.zfb.url}
+  appId: ${mata.zfb.appId}
+  encryptKey: ${mata.zfb.encryptKey}
+  privateKey: ${mata.zfb.privateKey}
+  alipayPublicKey: ${mata.zfb.alipayPublicKey}
+  payNoticeUrl: ${mata.zfb.payNoticeUrl}
