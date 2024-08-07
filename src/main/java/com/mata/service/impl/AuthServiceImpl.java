@@ -17,8 +17,10 @@ import com.mata.service.AuthService;
 import com.mata.utils.EmailMessage;
 import com.mata.utils.RedisCommonKey;
 import com.mata.utils.SendEmailUtil;
+import org.redisson.api.RBloomFilter;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -44,6 +46,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    @Qualifier("userBloom")
+    private RBloomFilter<Integer> userBloom;
+
+
 
     /**
      * 发送登录验证码 异步 发送到消息队列
@@ -102,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 通过验证码登录
+     * 通过验证码登录/注册
      *
      * @param email 邮箱
      * @param code  验证码
@@ -129,6 +137,8 @@ public class AuthServiceImpl implements AuthService {
                     .email(email)
                     .build();
             userDao.insert(user);
+            // 创建完加入用户id布隆过滤器
+            userBloom.add(user.getUserId());
         }
         // 将userId存入token 并返回
         String token = jwtUtil.createToken(user.getUserId(), Role.User);

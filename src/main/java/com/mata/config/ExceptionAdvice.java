@@ -2,6 +2,7 @@ package com.mata.config;
 
 import com.mata.dto.Result;
 import com.mata.exception.BusinessException;
+import com.mata.exception.SystemException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -47,5 +48,21 @@ public class ExceptionAdvice {
     @ExceptionHandler(value = BusinessException.class)
     public Result<?> handleBusinessException(BusinessException businessException){
         return Result.error(businessException.getMessage());
+    }
+
+    /**
+     * 系统异常处理
+     */
+    @ExceptionHandler(value = Exception.class)
+    public Result handleException(){
+        return Result.error("系统异常，请稍后再试");
+    }
+
+    /**
+     * 系统异常处理
+     */
+    @ExceptionHandler(value = SystemException.class)
+    public Result handleSystemException(SystemException systemException){
+        return Result.error(systemException.getMessage());
     }
 }

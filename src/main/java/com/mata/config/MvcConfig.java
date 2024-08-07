@@ -1,13 +1,25 @@
 package com.mata.config;
 
+import com.mata.interceptor.AdminLoginInterceptor;
+import com.mata.interceptor.UserLoginInterceptor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class MvcConfig implements WebMvcConfigurer {
+    @Autowired
+    private UserLoginInterceptor userLoginInterceptor;
+
+    @Autowired
+    private AdminLoginInterceptor adminLoginInterceptor;
     static final String ORIGINS[] = new String[]{"GET", "POST", "PUT", "DELETE","OPTIONS"};
 
+    /**
+     * CORS
+     */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // 所有的当前站点的请求地址，都支持跨域访问。
@@ -17,11 +29,12 @@ public class MvcConfig implements WebMvcConfigurer {
                 .maxAge(3600); // 超时时长设置为1小时。 时间单位是秒。
     }
 
-//    @Override
-//    public void addInterceptors(InterceptorRegistry registry) {
-//        registry.addInterceptor(new LoginInterceptor()).excludePathPatterns("/code/**","/user/password-login/**"
-//                ,"/user/code-login/**","/user/change-password/**"
-//        ).order(1);
-//        registry.addInterceptor(new RefreshTokenInterceptor(stringRedisTemplate)).order(0);
-//    }
+    /**
+     * 拦截器
+     */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(userLoginInterceptor).addPathPatterns("/user/**").excludePathPatterns("/user/information/*");
+        registry.addInterceptor(adminLoginInterceptor).addPathPatterns("/admin/**");
+    }
 }

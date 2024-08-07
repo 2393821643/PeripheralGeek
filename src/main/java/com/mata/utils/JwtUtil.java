@@ -45,14 +45,19 @@ public class JwtUtil {
      *  token解密
      *  @param token 解密
      */
-    public Integer parseToken(String token){
+    public Integer parseToken(String token,Role role){
         try {
             // 开始解析
             Claims claims = Jwts.parser()
                     .setSigningKey(key.getBytes(StandardCharsets.UTF_8)) //设置密钥
                     .parseClaimsJws(token).getBody();
             //获取数据
-            return Integer.valueOf(claims.get("userId").toString());
+            if(role.equals(Role.User)){
+                return Integer.valueOf(claims.get("userId").toString());
+            }else {
+                return Integer.valueOf(claims.get("adminId").toString());
+            }
+
         } catch (Exception e){
             return null;
         }

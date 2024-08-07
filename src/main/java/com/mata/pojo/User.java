@@ -36,4 +36,7 @@ public class User {
 
     @TableField("phone")
     private String phone; // 电话
+
+    @TableField("head_url")
+    private String headUrl; // 头像地址
 }
