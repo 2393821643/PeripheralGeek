@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ReadShareAndBuyApplication {
+public class PeripheralGeekApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ReadShareAndBuyApplication.class, args);
+        SpringApplication.run(PeripheralGeekApplication.class, args);
     }
 
 }

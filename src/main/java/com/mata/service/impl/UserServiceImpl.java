@@ -83,6 +83,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
                     return Result.success(resultUser);
                 } else {
                     // 没得到锁，递归重新查看缓存
+                    Thread.sleep(50);
                     return getUserInformationById(userId, UserPositioning.Other);
                 }
             } catch (InterruptedException e) {
