@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
+import org.hibernate.validator.constraints.Length;
+
+import javax.validation.constraints.Min;
 
 @Data
 @ToString
@@ -16,6 +19,7 @@ public class Admin {
     @TableId(value="admin_id", type= IdType.AUTO)
     private Integer adminId;
 
+    @Length(min = 1,max = 30,message = "用户名长度要大于0，小于30")
     @TableField("admin_Name")
     private String adminName;
 
