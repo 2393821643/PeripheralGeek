@@ -84,8 +84,7 @@ class ReadShareAndBuyApplicationTests {
 
     @Test
     void testLock() throws InterruptedException {
-        String userJson = stringRedisTemplate.opsForValue().get(RedisCommonKey.USER_ID_PRE_KEY);
-        System.out.println(userJson);
+        boolean add = userBloom.add(10001);
     }
 
 }

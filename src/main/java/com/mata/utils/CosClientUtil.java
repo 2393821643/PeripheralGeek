@@ -1,5 +1,6 @@
 package com.mata.utils;
 
+import com.mata.enumPackage.CosFileMkdir;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.model.PutObjectResult;
@@ -17,8 +18,6 @@ public class CosClientUtil {
     @Value("${tx-client.bucketName}")
     private String bucketName;
 
-    @Value("${tx-client.fileMkdir}")
-    private String fileMkdir;
 
     @Value("${tx-client.regionName}")
     private String regionName;
@@ -27,12 +26,13 @@ public class CosClientUtil {
     /**
      * 上传文件到cos中
      * @param file 要上传的文件
+     * @param cosFileMkdir 放在哪个文件夹
      * @return 文件的url
      */
-    public String sendFile(File file){
-        String key= fileMkdir+"/"+file.getName();
+    public String sendFile(File file,CosFileMkdir cosFileMkdir){
+        String key= cosFileMkdir.getMkdirName()+"/"+file.getName();
         PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, key, file);
         PutObjectResult putObjectResult = cosClient.putObject(putObjectRequest);
-        return "https://"+bucketName+".cos."+regionName+".myqcloud.com/"+fileMkdir+"/"+file.getName();
+        return "https://"+bucketName+".cos."+regionName+".myqcloud.com/"+cosFileMkdir.getMkdirName()+"/"+file.getName();
     }
 }

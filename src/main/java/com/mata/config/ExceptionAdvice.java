@@ -50,19 +50,19 @@ public class ExceptionAdvice {
         return Result.error(businessException.getMessage());
     }
 
-    /**
-     * 系统异常处理
-     */
-    @ExceptionHandler(value = Exception.class)
-    public Result handleException(){
-        return Result.error("系统异常，请稍后再试");
-    }
-
-    /**
-     * 系统异常处理
-     */
-    @ExceptionHandler(value = SystemException.class)
-    public Result handleSystemException(SystemException systemException){
-        return Result.error(systemException.getMessage());
-    }
+//    /**
+//     * 系统异常处理
+//     */
+//    @ExceptionHandler(value = Exception.class)
+//    public Result handleException(){
+//        return Result.error("系统异常，请稍后再试");
+//    }
+//
+//    /**
+//     * 系统异常处理
+//     */
+//    @ExceptionHandler(value = SystemException.class)
+//    public Result handleSystemException(SystemException systemException){
+//        return Result.error(systemException.getMessage());
+//    }
 }

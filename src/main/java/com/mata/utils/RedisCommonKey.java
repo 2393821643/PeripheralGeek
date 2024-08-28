@@ -26,4 +26,16 @@ public class RedisCommonKey {
     // 创建用户缓存 锁存活时间
     public final static long USER_ID_LOCK_TIME = 5L;
 
+    // 创建用户名缓存 锁前缀
+    public final static String USERNAME_LOCK_PRE_KEY = "lock:username:";
+
+    // 创建用户名缓存 锁存活时间
+    public final static long USERNAME_LOCK_TIME = 5L;
+
+    // 创建用户名缓存 前缀
+    public final static String USERNAME_KEY = "user:username:";
+
+    // 创建用户名缓存 存活时间
+    public final static long USERNAME_TIME = 5L;
+
 }

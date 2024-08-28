@@ -7,13 +7,12 @@ import com.mata.pojo.User;
 import com.mata.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @RestController
 @RequestMapping("/user")
@@ -41,11 +40,30 @@ public class UserController {
     }
 
     /**
-     * 获取指定id用户的个人信息
+     * 修改用户个人信息
+     *
      */
-//    @GetMapping("/information/name")
-//    public Result<User> getUserInformationByName(@RequestParam("username")
-//                                           @NotEmpty(message = "请输入要搜索用户的用户名") String username){
-//        return userService.getUserInformation(userId,UserPositioning.Other);
-//    }
+    @PutMapping("/information")
+    public Result updateUserInformationMessage(@RequestBody @Validated User user){
+        return userService.updateUserInformationMessage(user);
+    }
+
+    /**
+     * 通过用户名查找用户
+     */
+    @GetMapping("/information/name")
+    public Result<List<User>> getUserInformationByName(@RequestParam("username") String username){
+
+        return userService.getUserInformationByName(username);
+    }
+
+    /**
+     * 更新用户头像
+     */
+    @PutMapping("/header")
+    public Result<String> updateUserHeader(@RequestParam("img") MultipartFile img){
+        return userService.updateUserHeader(img);
+    }
+
+
 }
