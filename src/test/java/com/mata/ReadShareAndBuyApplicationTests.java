@@ -71,20 +71,18 @@ class ReadShareAndBuyApplicationTests {
 
     @Test
     void testWriteLock2(){
-        RReadWriteLock readWriteLock = redissonClient.getReadWriteLock("RWL");
-        RLock rLock = readWriteLock.writeLock();
-        try {
-            rLock.lock(15, TimeUnit.SECONDS);
-            stringRedisTemplate.opsForValue().set("test","test2");
-            System.out.println("test2");
-        }finally {
-            //rLock.unlock();
-        }
+        Long goodId = Long.valueOf("12345");
+        System.out.println(goodId);
     }
 
     @Test
     void testLock() throws InterruptedException {
         boolean add = userBloom.add(10001);
+    }
+
+    @Test
+    void suggestTest(){
+
     }
 
 }

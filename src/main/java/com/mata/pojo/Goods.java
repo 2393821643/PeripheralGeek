@@ -23,12 +23,12 @@ public class Goods {
     private String goodsType; // 商品类型
 
     @TableField("goods_count")
-    private String goodsCount;  // 商品数量
+    private Integer goodsCount;  // 商品数量
 
     @TableField("goods_price")
     private Double goodsPrice; // 商品数量
 
-    @TableField("goods_connection_type")
+    @TableField("goods_connect_type")
     private String goodsConnectionType; // 商品连接方式
 
     @TableField("goods_url")
@@ -36,4 +36,7 @@ public class Goods {
 
     @TableField("goods_introduction")
     private String goodsIntroduction; //商品介绍
+
+    @TableField("goods_brand")
+    private String goodsBrand; // 商品品牌
 }
