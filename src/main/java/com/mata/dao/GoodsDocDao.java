@@ -1,6 +1,7 @@
 package com.mata.dao;
 
 import com.mata.EsDoc.GoodsDoc;
+import com.mata.dto.PageResult;
 import com.mata.enumPackage.CosFileMkdir;
 import com.mata.pojo.Goods;
 import org.springframework.stereotype.Repository;
@@ -32,4 +33,9 @@ public interface GoodsDocDao {
      * 返回商品推荐词
      */
     List<String> getSuggestions(String goodsName);
+
+    /**
+     * 搜索商品
+     */
+    PageResult<Goods> getGoodsByName(String goodsName, Integer page);
 }

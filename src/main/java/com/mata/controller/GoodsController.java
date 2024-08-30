@@ -2,7 +2,9 @@ package com.mata.controller;
 
 import com.mata.dto.GoodsAddDto;
 import com.mata.dto.GoodsUpdateDto;
+import com.mata.dto.PageResult;
 import com.mata.dto.Result;
+import com.mata.pojo.Goods;
 import com.mata.service.GoodsService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +66,22 @@ public class GoodsController {
     @GetMapping("/suggest/{goodsName}")
     public Result<List<String>> getSuggestions(@PathVariable("goodsName") String goodsName){
         return goodsService.getSuggestions(goodsName);
+    }
+
+    /**
+     * 搜索商品
+     */
+    @GetMapping("/search")
+    public Result<PageResult<Goods>> getGoodsByName(@RequestParam("goodsName")String goodsName, @RequestParam("page")Integer page){
+        return goodsService.getGoodsByName(goodsName,page);
+    }
+
+    /**
+     * 搜索商品 通过id
+     */
+    @GetMapping("/{goodsId}")
+    public Result<Goods> getGoodsById(@PathVariable("goodsId") Long goodsId){
+        return goodsService.getGoodsById(goodsId);
     }
 
 

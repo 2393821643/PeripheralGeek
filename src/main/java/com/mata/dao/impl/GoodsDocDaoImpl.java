@@ -1,8 +1,10 @@
 package com.mata.dao.impl;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.mata.EsDoc.GoodsDoc;
 import com.mata.dao.GoodsDocDao;
+import com.mata.dto.PageResult;
 import com.mata.enumPackage.CosFileMkdir;
 import com.mata.pojo.Goods;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -13,6 +15,10 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
@@ -134,4 +140,55 @@ public class GoodsDocDaoImpl implements GoodsDocDao {
         }
         return suggestionList;
     }
+
+    /**
+     * 搜索商品
+     */
+    @Override
+    public PageResult<Goods> getGoodsByName(String goodsName, Integer page) {
+        // 创建请求对象
+        SearchRequest searchRequest = new SearchRequest("goods");
+        // DSL
+        // 查看搜索商品名是不是空，空就返回推荐商品
+        if (StrUtil.isEmpty(goodsName)){
+            searchRequest.source()
+                    .query(QueryBuilders.matchAllQuery());
+        }else {
+            searchRequest.source()
+                    .query(QueryBuilders.matchQuery("all",goodsName));
+        }
+        // 分页 一次20个结果
+        searchRequest.source()
+                .from((page - 1) * 20)
+                .size(20);
+        // 发送请求 解析响应
+        SearchResponse response = null;
+        try {
+            response = client.search(searchRequest, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return handleResponse(response);
+    }
+
+    /**
+     * 封装解析搜索
+     */
+    private PageResult<Goods> handleResponse(SearchResponse response){
+        List<Goods> goodsList = new ArrayList<>();
+        //解析操作
+        SearchHits searchHits = response.getHits();
+        //查询总条数
+        long total = searchHits.getTotalHits().value;
+        //查询结果数组
+        SearchHit[] hits = searchHits.getHits();
+        for (SearchHit hit:hits){
+            //4.3获得source
+            String goodsJson = hit.getSourceAsString();
+            Goods goods = JSONUtil.toBean(goodsJson, Goods.class);
+            goodsList.add(goods);
+        }
+        return new PageResult<>(total,goodsList);
+    }
+
 }

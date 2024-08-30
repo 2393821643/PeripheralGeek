@@ -147,7 +147,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         RLock lock = redissonClient.getLock(RedisCommonKey.USERNAME_LOCK_PRE_KEY+username); // 创建锁对象
         try {
             // 是否获得锁
-            boolean isLock = lock.tryLock(0, RedisCommonKey.USERNAME_TIME, TimeUnit.SECONDS);
+            boolean isLock = lock.tryLock(0, RedisCommonKey.USERNAME_LOCK_TIME, TimeUnit.SECONDS);
             if (isLock){
                 // 查数据库
                 LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();

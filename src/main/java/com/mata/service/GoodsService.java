@@ -3,6 +3,7 @@ package com.mata.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.mata.dto.GoodsAddDto;
 import com.mata.dto.GoodsUpdateDto;
+import com.mata.dto.PageResult;
 import com.mata.dto.Result;
 import com.mata.enumPackage.CosFileMkdir;
 import com.mata.pojo.Goods;
@@ -82,4 +83,14 @@ public interface GoodsService extends IService<Goods> {
      * 返回商品推荐词
      */
     Result<List<String>> getSuggestions(String goodsName);
+
+    /**
+     * 搜索商品
+     */
+    Result<PageResult<Goods>> getGoodsByName(String goodsName, Integer page);
+
+    /**
+     * 搜索商品 通过id
+     */
+    Result<Goods> getGoodsById(Long goodsId);
 }

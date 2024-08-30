@@ -1,8 +1,6 @@
 package com.mata.EsDoc;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
+
 import com.mata.pojo.Goods;
 import lombok.*;
 
@@ -46,7 +44,7 @@ public class GoodsDoc {
         this.goodsIntroduction = goods.getGoodsIntroduction();
         this.goodsBrand = goods.getGoodsBrand();
         List<String> suggestionList = new ArrayList<>();
-        Collections.addAll(suggestionList,this.goodsName,this.goodsBrand);
+        Collections.addAll(suggestionList,this.goodsName,this.goodsType,this.goodsConnectionType,this.goodsBrand);
         this.suggestion = suggestionList;
     }
 
