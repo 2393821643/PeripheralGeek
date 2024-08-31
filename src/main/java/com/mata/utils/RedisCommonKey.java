@@ -50,4 +50,21 @@ public class RedisCommonKey {
     // 商品缓存键存活时间
     public final static long GOODS_LOCK_TIME = 5L;
 
+    // 商品数量缓存前缀
+    public final static String GOODS_COUNT_PRE_KEY = "goods:count:";
+
+    // 商品数量存活时间
+    public final static long GOODS_COUNT_TIME = 15L;
+
+    // 商品数量加锁前缀
+    public final static String GOODS_COUNT_LOCK_PRE_KEY = "lock:goods:count:";
+
+    // 商品数量加锁时间
+    public final static long GOODS_COUNT_LOCK_TIME = 5L;
+
+    // 商品修改锁前缀
+    public final static String GOODS_COUNT_UPDATE_PRE_KEY="lock:goods:update:";
+
+    // 商品修改锁时间
+    public final static long GOODS_COUNT_UPDATE_TIME = 5L;
 }

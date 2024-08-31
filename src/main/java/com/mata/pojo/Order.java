@@ -21,8 +21,8 @@ public class Order {
     @TableField("user_id")
     private Integer userId;
 
-    @TableField("book_id")
-    private Long bookId;
+    @TableField("goods_id")
+    private Long goodsId;
 
     @TableField("price")
     private Double price;
@@ -45,6 +45,6 @@ public class Order {
     @TableField("phone")
     private String phone;
 
-    @TableField("bookUrl")
-    private String bookUrl;
+    @TableField("goods_url")
+    private String goodsUrl;
 }

@@ -42,7 +42,7 @@ public class User {
     private String sex; // 性别
 
     @TableField("phone")
-    @Length(min = 0,max = 11,message = "请输入正确的性别")
+    @Length(min = 11,max = 11,message = "请输入正确的手机号")
     private String phone; // 电话
 
     @TableField("head_url")
