@@ -67,4 +67,10 @@ public class RedisCommonKey {
 
     // 商品修改锁时间
     public final static long GOODS_COUNT_UPDATE_TIME = 5L;
+
+    // 订单消息缓存
+    public final static String ORDER_PRE_KEY = "order:";
+
+    // 订单缓存时间
+    public final static long ORDER_TIME = 15L;
 }

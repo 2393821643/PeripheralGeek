@@ -44,5 +44,17 @@ public class OrderMessageListener {
         orderService.decreaseGoodsCount(Long.valueOf(goodsIdStr));
     }
 
+    /**
+     * 监听修改数据库 修改订单信息
+     */
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = "updateOrderQueue"),
+            exchange = @Exchange(name = "OrderExchange",type = ExchangeTypes.DIRECT),
+            key = {"updateOrderKey"}
+    ))
+    public void listenUpdateOrder(String orderJson){
+        orderService.updateOrder(JSONUtil.toBean(orderJson,Order.class));
+    }
+
 
 }

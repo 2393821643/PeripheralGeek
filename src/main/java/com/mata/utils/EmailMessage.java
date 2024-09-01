@@ -10,6 +10,8 @@ public class EmailMessage {
 
     public static final String SEND_BUY_MESSAGE="您购买的商品";
 
-    public static final String SEND_BUY_SUCCESS_MESSAGE="已成功下单";
+    public static final String SEND_BUY_SUCCESS_MESSAGE="已成功下单,订单号为：";
+
+    public static final String SEND_BUY_SUCCESS_MESSAGE_PAY=",共消费：";
 
 }

@@ -30,4 +30,14 @@ public class BloomConfig {
         bloomFilter.tryInit(1000000,0.03);
         return bloomFilter;
     }
+
+    /**
+     * 订单id的bloom过滤器
+     */
+    @Bean("orderBloom")
+    public RBloomFilter<Long> orderBloom(){
+        RBloomFilter<Long> bloomFilter = redissonClient.getBloomFilter("orderIdBloom");
+        bloomFilter.tryInit(1000000,0.03);
+        return bloomFilter;
+    }
 }

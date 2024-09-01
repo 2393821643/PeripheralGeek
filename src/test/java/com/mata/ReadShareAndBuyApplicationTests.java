@@ -1,5 +1,6 @@
 package com.mata;
 
+import com.mata.utils.AlipayUtil;
 import com.mata.utils.RedisCommonKey;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
@@ -105,6 +107,15 @@ class ReadShareAndBuyApplicationTests {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Autowired
+    private AlipayUtil alipayUtil;
+
+    @Test
+    void reP(){
+        String html = alipayUtil.createOrder("1829853827517382656", BigDecimal.valueOf(100.00), "罗技G502");
+        System.out.println(html);
     }
 
 

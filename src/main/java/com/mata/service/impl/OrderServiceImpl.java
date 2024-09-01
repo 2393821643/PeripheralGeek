@@ -1,25 +1,27 @@
 package com.mata.service.impl;
 
-import cn.hutool.bloomfilter.BloomFilter;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.mata.EsDoc.GoodsDoc;
 import com.mata.dao.GoodsDao;
 import com.mata.dao.OrderDao;
 import com.mata.dao.UserDao;
 import com.mata.dto.BuyMessageDto;
+import com.mata.dto.PageResult;
 import com.mata.dto.Result;
 import com.mata.holder.Holder;
 import com.mata.pojo.Goods;
 import com.mata.pojo.Order;
+import com.mata.pojo.User;
 import com.mata.service.GoodsService;
 import com.mata.service.OrderService;
-import com.mata.service.UserService;
 import com.mata.utils.AlipayUtil;
+import com.mata.utils.EmailMessage;
 import com.mata.utils.RedisCommonKey;
+import com.mata.utils.SendEmailUtil;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RReadWriteLock;
@@ -36,9 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -48,6 +48,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
 
     @Autowired
     private GoodsService goodsService;
+
+    @Autowired
+    private UserDao userDao;
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
@@ -64,6 +67,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    @Qualifier("orderBloom")
+    private RBloomFilter<Long> orderBloomFilter;
+
+    @Autowired
+    private SendEmailUtil sendEmailUtil;
 
 
     /**
@@ -85,6 +95,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
         // 开始支付
         // 订单id
         String outTradeNo = IdUtil.getSnowflakeNextIdStr();
+        // 加入订单bloom
+        orderBloomFilter.add(Long.valueOf(outTradeNo));
         // 返回订单html
         String orderHtml = alipayUtil.createOrder(outTradeNo, BigDecimal.valueOf(goodsTotalPrice), goodsName);
         // 异步发送创建订单记录
@@ -100,7 +112,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
                 .goodsUrl(goods.getGoodsUrl())
                 .createTime(LocalDateTime.now())
                 .price(goodsTotalPrice)
+                .goodsCount(buyMessageDto.getCount())
                 .build();
+        // 异步写入mysql
         rabbitTemplate.convertAndSend("OrderExchange", "createOrderKey", JSONUtil.toJsonStr(order));
         // 减少缓存商品数量
         decreaseCacheGoodsCount(buyMessageDto.getCount(), goodsId);
@@ -111,7 +125,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
                 .build();
         rabbitTemplate.convertAndSend("UpdateCountExchange", "updateCountKey", message);
         // 发布消息队列
-        return Result.success(orderHtml,null);
+        return Result.success(orderHtml, null);
     }
 
     /**
@@ -191,6 +205,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
      */
     public void createOrderToMysql(Order order) {
         save(order);
+        // 同时写入Redis
+        stringRedisTemplate.opsForValue().set(RedisCommonKey.ORDER_PRE_KEY + order.getOutTradeNo(), JSONUtil.toJsonStr(order), RedisCommonKey.ORDER_TIME, TimeUnit.MINUTES);
     }
 
     /**
@@ -199,7 +215,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
      */
     public void decreaseGoodsCount(Long goodsId) {
         // 获取修改数据库的锁
-        RLock updateLock = redissonClient.getLock(RedisCommonKey.GOODS_COUNT_UPDATE_PRE_KEY+goodsId);
+        RLock updateLock = redissonClient.getLock(RedisCommonKey.GOODS_COUNT_UPDATE_PRE_KEY + goodsId);
         try {
             boolean isLock = updateLock.tryLock(0, RedisCommonKey.GOODS_COUNT_UPDATE_TIME, TimeUnit.MINUTES);
             if (isLock) {
@@ -232,16 +248,26 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
         Map<String, String> map = convertMap(parameterMap);
         // 验证请求
         boolean signVerified = alipayUtil.verify(map);
-        System.out.println(signVerified);
         // 验证成功
-        if (signVerified){
-            // 获取out_trade_no
-            String outTradeNo = map.get("out_trade_no");;
+        if (signVerified) {
+            // 获取out_trade_no 和 goodsname
+            String outTradeNo = map.get("out_trade_no");
+            String goodsName = map.get("subject");
+            String price = map.get("receipt_amount");
             Order order = Order.builder()
                     .outTradeNo(Long.valueOf(outTradeNo))
+                    .goodsName(goodsName)
+                    .price(Double.valueOf(price))
                     .state("已支付")
                     .build();
+            // 修改数据库消息
             this.updateOrder(order);
+            // 删除缓存
+            stringRedisTemplate.delete(RedisCommonKey.ORDER_PRE_KEY + outTradeNo);
+            // 重建缓存
+            getOrderByOutTradeNo(Long.valueOf(outTradeNo));
+            // 发送邮箱提示
+            sendEmailPayMessage(order);
         }
     }
 
@@ -262,8 +288,140 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
     /**
      * 修改订单
      */
-    public void updateOrder(Order order){
+    public void updateOrder(Order order) {
         updateById(order);
     }
 
+    /**
+     * 发送邮箱 提示购买成功
+     */
+    private void sendEmailPayMessage(Order order) {
+        // 数据库查找用户id
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(Order::getUserId)
+                .eq(Order::getOutTradeNo, order.getOutTradeNo());
+        Integer userId = getOne(wrapper).getUserId();
+        // 查找用户邮箱
+        LambdaQueryWrapper<User> userWrapper = new LambdaQueryWrapper<>();
+        userWrapper.select(User::getEmail).eq(User::getUserId, userId);
+        String email = userDao.selectOne(userWrapper).getEmail();
+        // 发送邮箱
+        sendEmailUtil.sendEmail(email, EmailMessage.TITLE, EmailMessage.SEND_BUY_MESSAGE + order.getGoodsName() + EmailMessage.SEND_BUY_SUCCESS_MESSAGE + order.getOutTradeNo() +
+                EmailMessage.SEND_BUY_SUCCESS_MESSAGE_PAY + order.getPrice() + "元");
+    }
+
+    /**
+     * 继续支付
+     */
+    @Override
+    public Result<String> continuePay(Long outTradeNo) {
+        Order order = getOrderByOutTradeNo(outTradeNo);
+        if (order == null) {
+            return Result.error("订单不存在");
+        }
+        String orderHtml = alipayUtil.createOrder(order.getOutTradeNo().toString(), BigDecimal.valueOf(order.getPrice()), order.getGoodsName());
+        return Result.success(orderHtml, null);
+    }
+
+    /**
+     * 查看订单是否存在
+     */
+    private Order getOrderByOutTradeNo(Long outTradeNo) {
+        Order order = null;
+        // 查bloom 订单是否存在
+        boolean contains = orderBloomFilter.contains(outTradeNo);
+        if (!contains) {
+            return null;
+        }
+        // 查redis
+        String orderJson = stringRedisTemplate.opsForValue().get(RedisCommonKey.ORDER_PRE_KEY + outTradeNo);
+        if (!StrUtil.isEmpty(orderJson)) {
+            order = JSONUtil.toBean(orderJson, Order.class);
+            return order;
+        }
+        // 查mysql
+        order = getById(outTradeNo);
+        if (order != null) {
+            // 创建缓存
+            stringRedisTemplate.opsForValue().set(RedisCommonKey.ORDER_PRE_KEY + order.getOutTradeNo(), JSONUtil.toJsonStr(order), RedisCommonKey.ORDER_TIME, TimeUnit.MINUTES);
+            return order;
+        }
+        return null;
+    }
+
+    /**
+     * 查看订单信息 只能看当前账号的的某个订单
+     */
+    @Override
+    public Result<Order> getOrderMessage(Long outTradeNo) {
+        Order order = getOrderByOutTradeNo(outTradeNo);
+        if (order == null) {
+            return Result.error("此订单不存在");
+        }
+        if (Objects.equals(order.getUserId(), Holder.getUser())) {
+            return Result.success(order);
+        }
+        return Result.error("此订单不存在");
+    }
+
+
+    /**
+     * 获取订单列表
+     */
+    @Override
+    public Result<PageResult<Order>> getOrderPage(Integer page) {
+        // 条件
+        Page<Order> orderPage = lambdaQuery()
+                .select(Order::getGoodsName, Order::getGoodsUrl, Order::getState, Order::getPrice, Order::getGoodsCount)
+                .eq(Order::getUserId, Holder.getUser())
+                .orderByDesc(Order::getCreateTime)
+                .page(new Page<>(page, 20));
+        // 装载数据
+        PageResult<Order> orderResult = new PageResult<>();
+        orderResult.setRecords(orderPage.getRecords());
+        orderResult.setTotal(orderPage.getTotal());
+        return Result.success(orderResult);
+    }
+
+    /**
+     * 关闭交易
+     */
+    @Override
+    public Result closeOrder(Long outTradeNo) {
+        Order order = getOrderByOutTradeNo(outTradeNo);
+        if (order == null) {
+            return Result.error("此订单不存在");
+        }
+        if (!Objects.equals(order.getUserId(), Holder.getUser())) {
+            return Result.error("此订单不存在");
+        }
+        // 获得订单状态
+        String state = order.getState();
+        if (!"未支付".equals(state)) {
+            return Result.error("此订单已支付或关闭");
+        }
+        alipayUtil.closePay(outTradeNo.toString());
+        // 删除缓存
+        stringRedisTemplate.delete(RedisCommonKey.ORDER_PRE_KEY + outTradeNo);
+        // 修改数据库状态
+        order.setState("已关闭");
+        rabbitTemplate.convertAndSend("OrderExchange", "updateOrderKey", JSONUtil.toJsonStr(order));
+        return Result.success("交易已关闭");
+    }
+
+    /**
+     * 管理员修改订单状态
+     */
+    @Override
+    public Result updateOrderState(Long outTradeNo, String state) {
+        // 获得订单信息
+        Order order = getOrderByOutTradeNo(outTradeNo);
+        if (order == null){
+            return Result.error("此订单不存在");
+        }
+        order.setState(state);
+        // 异步修改数据库
+        rabbitTemplate.convertAndSend("OrderExchange", "updateOrderKey", JSONUtil.toJsonStr(order));
+        return Result.success("修改成功");
+    }
 }

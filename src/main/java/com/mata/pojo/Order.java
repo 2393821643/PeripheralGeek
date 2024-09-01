@@ -47,4 +47,7 @@ public class Order {
 
     @TableField("goods_url")
     private String goodsUrl;
+
+    @TableField("goods_count")
+    private Integer goodsCount;
 }
