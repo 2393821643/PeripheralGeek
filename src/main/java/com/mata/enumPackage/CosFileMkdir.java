@@ -4,7 +4,8 @@ public enum CosFileMkdir {
     HeadImg("headImg"),
     GoodsImg("goodsImg"),
     GoodsHtmlImg("goodsHtmlImg"),
-    ArticleHtmlImg("ArticleHtmlImg");
+    ArticleHtmlImg("ArticleHtmlImg"),
+    ArticleImg("articleImg");
     private final String mkdirName;
 
     public String getMkdirName() {

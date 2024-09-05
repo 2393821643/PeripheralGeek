@@ -73,4 +73,29 @@ public class RedisCommonKey {
 
     // 订单缓存时间
     public final static long ORDER_TIME = 15L;
+
+    // 文章缓存前缀
+    public final static String ARTICLE_PRE_KEY = "article:";
+
+    // 文章缓存时间
+    public final static long ARTICLE_TIME = 15L;
+
+    // 文章锁前缀
+    public final static String ARTICLE_LOCK_PRE_KEY = "lock:article";
+
+    // 文章锁时间
+    public final static long ARTICLE_LOCK_TIME = 5L;
+
+    // 用户文章缓存前缀
+    public final static String ARTICLE_USER_PRE_KEY = "article:user:";
+
+    // 用户文章缓存时间
+    public final static long ARTICLE_USER_TIME = 15L;
+
+    // 用户文章缓存锁前缀
+    public final static String ARTICLE_USER_LOCK_PRE_KEY = "lock:article:user:";
+
+    // 用户文章缓存锁时间
+    public final static long ARTICLE_USER_LOCK_TIME = 5;
+
 }

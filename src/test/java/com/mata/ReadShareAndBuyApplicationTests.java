@@ -83,9 +83,13 @@ class ReadShareAndBuyApplicationTests {
         System.out.println(goodId);
     }
 
+    @Autowired
+    @Qualifier("articleBloom")
+    RBloomFilter<Long> articleFilter;
     @Test
     void testLock() throws InterruptedException {
-        boolean add = userBloom.add(10001);
+        //boolean add = articleFilter.add(1831695980921217024L);
+        System.out.println(articleFilter.contains(1831697207713083392));
     }
 
     @Autowired

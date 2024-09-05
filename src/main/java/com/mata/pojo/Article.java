@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -30,4 +32,7 @@ public class Article {
 
     @TableField("user_id")
     private Integer userId; // 文章作者id
+
+    @TableField("create_time")
+    private LocalDateTime createTime;
 }

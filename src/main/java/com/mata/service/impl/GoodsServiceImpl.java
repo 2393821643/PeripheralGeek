@@ -130,6 +130,8 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
      */
     public void addGoodsToMysql(Goods goods) {
         save(goods);
+        // 更新redis缓存
+        stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY+goods.getGoodsId(),JSONUtil.toJsonStr(goods),RedisCommonKey.GOODS_TIME,TimeUnit.MINUTES);
     }
 
     /**
@@ -154,6 +156,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
      */
     public void deleteGoodsToMysql(Long goodsId) {
         removeById(goodsId);
+        stringRedisTemplate.delete(RedisCommonKey.GOODS_PRE_KEY+goodsId);
     }
 
     /**
@@ -190,6 +193,9 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
     @Override
     public void updateGoodsToMysql(Goods goods) {
         updateById(goods);
+        String goodsJson = JSONUtil.toJsonStr(goods);
+        // 更新redis缓存
+        stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY+goods.getGoodsId(),goodsJson,RedisCommonKey.GOODS_TIME,TimeUnit.MINUTES);
     }
 
     /**
