@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.mata.dto.GoodsUpdateDto;
 import lombok.*;
 
 @Data
@@ -39,4 +40,6 @@ public class Goods {
 
     @TableField("goods_brand")
     private String goodsBrand; // 商品品牌
+
+
 }

@@ -31,4 +31,46 @@ public class ArticleMessageListener {
         articleService.addArticleToMysql(article);
         articleService.addArticleToEs(article);
     }
+
+    /**
+     * 添加删除文章信息 到es和mysql
+     */
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = "deleteArticleQueue"),
+            exchange = @Exchange(name = "ArticleExchange",type = ExchangeTypes.DIRECT),
+            key = {"deleteArticleKey"}
+    ))
+    public void deleteArticles(String articleIdStr){
+        Long articleId = Long.valueOf(articleIdStr);
+        articleService.deleteToMysql(articleId);
+        articleService.deleteToEs(articleIdStr);
+    }
+
+    /**
+     * 修改文章信息 到es和mysql
+     */
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = "updateArticleQueue"),
+            exchange = @Exchange(name = "ArticleExchange",type = ExchangeTypes.DIRECT),
+            key = {"updateArticleKey"}
+    ))
+    public void updateArticles(String articleJson){
+        Article article = JSONUtil.toBean(articleJson, Article.class);
+        articleService.updateToMysql(article);
+        articleService.updateToEs(article);
+    }
+
+//    /**
+//     * 修改文章图片 到es和mysql
+//     */
+//    @RabbitListener(bindings = @QueueBinding(
+//            value = @Queue(name = "updateArticleImgQueue"),
+//            exchange = @Exchange(name = "ArticleExchange",type = ExchangeTypes.DIRECT),
+//            key = {"updateArticleImgKey"}
+//    ))
+//    public void updateArticles(String articleJson){
+//        Article article = JSONUtil.toBean(articleJson, Article.class);
+//        articleService.updateToMysql(article);
+//        articleService.updateImgToEs(article);
+//    }
 }

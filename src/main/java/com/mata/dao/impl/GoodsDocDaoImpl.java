@@ -54,6 +54,9 @@ public class GoodsDocDaoImpl implements GoodsDocDao {
         }
     }
 
+    /**
+     * 删除商品
+     */
     @Override
     public void deleteGoods(String goodsId) {
         //1：准备Request对象

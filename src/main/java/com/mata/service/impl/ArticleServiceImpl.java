@@ -11,6 +11,7 @@ import com.mata.EsDoc.ArticleDoc;
 import com.mata.dao.ArticleDao;
 import com.mata.dao.ArticleDocDao;
 import com.mata.dto.ArticleDto;
+import com.mata.dto.ArticleUpdateDto;
 import com.mata.dto.PageResult;
 import com.mata.dto.Result;
 import com.mata.enumPackage.CosFileMkdir;
@@ -261,6 +262,139 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
             }
         }
         return Result.success(article);
+    }
+
+    /**
+     * 根据文章名获取文章
+     */
+    @Override
+    public Result<PageResult<ArticleDoc>> getArticleByName(String articleName,Integer page) {
+        PageResult<ArticleDoc> resultPage = articleDocDao.getArticleByName(articleName, page);
+        return Result.success(resultPage);
+    }
+
+    /**
+     *  删除文章
+     */
+    @Override
+    public Result deleteArticleById(Long articleId) {
+        // 检查文章是否存在
+        boolean exist = checkArticleIsUserHave(articleId, Holder.getUser());
+        if (!exist){
+            return Result.error("此文章不存在");
+        }
+        // 删除缓存
+        stringRedisTemplate.delete(RedisCommonKey.ARTICLE_PRE_KEY+articleId);
+        deleteKeysByPrefix(RedisCommonKey.ARTICLE_USER_PRE_KEY+Holder.getUser());
+        // 异步删除
+        rabbitTemplate.convertAndSend("ArticleExchange","deleteArticleKey",articleId.toString());
+        return Result.success("删除成功");
+    }
+
+    /**
+     * 检查文章和用户是否对应
+     */
+    private boolean checkArticleIsUserHave(Long articleId,Integer userId){
+        boolean contains = articleBloom.contains(articleId);
+        if (!contains){
+            return false;
+        }
+        LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(Article::getArticleId)
+                .eq(Article::getArticleId,articleId)
+                .eq(Article::getUserId,userId);
+        Article a = getOne(wrapper);
+        return a != null;
+    }
+
+    /**
+     * 从mysql中删除
+     */
+    public void deleteToMysql(Long articleId){
+        removeById(articleId);
+    }
+
+    /**
+     *  删除文章从es
+     */
+    public void deleteToEs(String articleId){
+        articleDocDao.deleteArticle(articleId);
+    }
+
+    /**
+     * 修改文章标题，内容 通过文章Id
+     */
+    @Override
+    public Result updateArticle(ArticleUpdateDto articleUpdateDto) {
+        Long articleId = articleUpdateDto.getArticleId();
+        String articleContextUrl = null;
+        // 检查文章是否存在
+        boolean exist = checkArticleIsUserHave(articleId, Holder.getUser());
+        if (!exist){
+            return Result.error("此文章不存在");
+        }
+        // 删除缓存
+        stringRedisTemplate.delete(RedisCommonKey.ARTICLE_PRE_KEY+articleId);
+        deleteKeysByPrefix(RedisCommonKey.ARTICLE_USER_PRE_KEY+Holder.getUser());
+        // 查找源文章信息
+        Article article = getById(articleId);
+        // 更新文章
+        try {
+            byte[] introductionBytes = articleUpdateDto.getContext().getBytes();
+            articleContextUrl =  writeToCos(introductionBytes, IdUtil.getSnowflakeNextIdStr() + ".html", CosFileMkdir.ArticleHtmlImg);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        // 重新构建文章对象
+        article.setArticleTitle(articleUpdateDto.getTitle());
+        article.setArticleContextUrl(articleContextUrl);
+        // 异步发送修改
+        rabbitTemplate.convertAndSend("ArticleExchange","updateArticleKey",JSONUtil.toJsonStr(article));
+        return Result.success("修改成功");
+    }
+
+    /**
+     * 修改文章信息到Mysql
+     */
+    @Override
+    public void updateToMysql(Article article) {
+        updateById(article);
+    }
+
+    /**
+     * 修改文章信息到es
+     */
+    @Override
+    public void updateToEs(Article article) {
+        articleDocDao.updateArticle(new ArticleDoc(article));
+    }
+
+    /**
+     * 修改文章图片 通过文章Id
+     */
+    @Override
+    public Result updateArticleImg(Long articleId, MultipartFile img) {
+        String articleImgUrl = null;
+        // 检查文章是否存在
+        boolean exist = checkArticleIsUserHave(articleId, Holder.getUser());
+        if (!exist){
+            return Result.error("此文章不存在");
+        }
+        // 删除缓存
+        stringRedisTemplate.delete(RedisCommonKey.ARTICLE_PRE_KEY+articleId);
+        deleteKeysByPrefix(RedisCommonKey.ARTICLE_USER_PRE_KEY+Holder.getUser());
+        // 查找源文章信息
+        Article article = getById(articleId);
+        try {
+            byte[] imgBytes = img.getBytes();
+            articleImgUrl = writeToCos(imgBytes, img.getOriginalFilename(), CosFileMkdir.ArticleImg);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        article.setArticleImgUrl(articleImgUrl);
+        // 异步发送
+        rabbitTemplate.convertAndSend("ArticleExchange","updateArticleKey",JSONUtil.toJsonStr(article));
+        return Result.success("修改成功");
     }
 
 

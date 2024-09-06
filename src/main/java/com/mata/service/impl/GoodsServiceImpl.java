@@ -3,6 +3,7 @@ package com.mata.service.impl;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mata.EsDoc.GoodsDoc;
 import com.mata.dao.GoodsDao;
@@ -173,15 +174,14 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
      */
     @Override
     public Result updateGoods(GoodsUpdateDto goodsUpdateDto) {
-        Goods goods = Goods.builder()
-                .goodsId(goodsUpdateDto.getGoodsId())
-                .goodsName(goodsUpdateDto.getGoodsName())
-                .goodsBrand(goodsUpdateDto.getGoodsBrand())
-                .goodsType(goodsUpdateDto.getGoodsType())
-                .goodsConnectionType(goodsUpdateDto.getGoodsConnectionType())
-                .goodsCount(goodsUpdateDto.getGoodsCount())
-                .goodsPrice(goodsUpdateDto.getGoodsPrice())
-                .build();
+        // 查数据库
+        Goods goods = getById(goodsUpdateDto.getGoodsId());
+         goods.setGoodsName(goodsUpdateDto.getGoodsName());
+         goods.setGoodsBrand(goodsUpdateDto.getGoodsBrand());
+         goods.setGoodsType(goodsUpdateDto.getGoodsType());
+         goods.setGoodsConnectionType(goodsUpdateDto.getGoodsConnectionType());
+         goods.setGoodsCount(goodsUpdateDto.getGoodsCount());
+         goods.setGoodsPrice(goodsUpdateDto.getGoodsPrice());
         String goodsJson = JSONUtil.toJsonStr(goods);
         rabbitTemplate.convertAndSend("GoodsExchange", "updateGoodsKey", goodsJson);
         return Result.success("修改成功");
