@@ -1,6 +1,6 @@
 package com.mata.utils;
 
-import com.mata.enumPackage.CosFileMkdir;
+import com.mata.common.enumPackage.CosFileMkdir;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.model.PutObjectResult;

@@ -1,7 +1,7 @@
 package com.mata.utils;
 
 import cn.dev33.satoken.stp.StpInterface;
-import com.mata.dao.AuthDao;
+import com.mata.model.auth.dao.AuthDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

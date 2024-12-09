@@ -1,8 +1,8 @@
 package com.mata;
 
-import com.mata.dao.AuthDao;
+import com.mata.model.auth.dao.AuthDao;
 import com.mata.utils.AlipayUtil;
-import com.mata.utils.RedisCommonKey;
+import com.mata.common.redisKey.RedisCommonKey;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RBloomFilter;
