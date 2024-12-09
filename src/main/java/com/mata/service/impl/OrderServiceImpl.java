@@ -1,5 +1,6 @@
 package com.mata.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
@@ -12,7 +13,6 @@ import com.mata.dao.UserDao;
 import com.mata.dto.BuyMessageDto;
 import com.mata.dto.PageResult;
 import com.mata.dto.Result;
-import com.mata.holder.Holder;
 import com.mata.pojo.Goods;
 import com.mata.pojo.Order;
 import com.mata.pojo.User;
@@ -102,7 +102,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
         // 异步发送创建订单记录
         Order order = Order.builder()
                 .outTradeNo(Long.valueOf(outTradeNo))
-                .userId(Holder.getUser())
+                .userId(StpUtil.getLoginIdAsInt())
                 .address(buyMessageDto.getAddress())
                 .recipient(buyMessageDto.getRecipient())
                 .phone(buyMessageDto.getPhone())
@@ -358,7 +358,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
         if (order == null) {
             return Result.error("此订单不存在");
         }
-        if (Objects.equals(order.getUserId(), Holder.getUser())) {
+        if (Objects.equals(order.getUserId(), StpUtil.getLoginIdAsInt())) {
             return Result.success(order);
         }
         return Result.error("此订单不存在");
@@ -373,7 +373,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
         // 条件
         Page<Order> orderPage = lambdaQuery()
                 .select(Order::getGoodsName, Order::getGoodsUrl, Order::getState, Order::getPrice, Order::getGoodsCount)
-                .eq(Order::getUserId, Holder.getUser())
+                .eq(Order::getUserId, StpUtil.getLoginIdAsInt())
                 .orderByDesc(Order::getCreateTime)
                 .page(new Page<>(page, 20));
         // 装载数据
@@ -392,7 +392,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
         if (order == null) {
             return Result.error("此订单不存在");
         }
-        if (!Objects.equals(order.getUserId(), Holder.getUser())) {
+        if (!Objects.equals(order.getUserId(), StpUtil.getLoginIdAsInt())) {
             return Result.error("此订单不存在");
         }
         // 获得订单状态

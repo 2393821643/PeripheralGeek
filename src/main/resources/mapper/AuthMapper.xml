@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mata.dao.AuthDao">
+
+
+    <select id="getRoleName" resultType="java.lang.String">
+        SELECT r.role_name
+        FROM tb_user u
+                 JOIN tb_role r ON u.role_id = r.id
+        WHERE u.user_id = #{userId};
+    </select>
+</mapper>

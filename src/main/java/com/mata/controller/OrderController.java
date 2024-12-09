@@ -1,5 +1,7 @@
 package com.mata.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.mata.dto.BuyMessageDto;
 import com.mata.dto.PageResult;
@@ -23,18 +25,20 @@ public class OrderController {
     private OrderService orderService;
 
     /**
-     *  购买商品，返回支付html
+     * 购买商品，返回支付html
      */
     @PostMapping("/buy/{goodsId}")
-    public Result<String> buyGoods(@PathVariable("goodsId") Long goodsId, @RequestBody @Validated BuyMessageDto buyMessageDto){
-        return orderService.buyGoods(goodsId,buyMessageDto);
+    @SaCheckLogin
+    @SaCheckRole("user")
+    public Result<String> buyGoods(@PathVariable("goodsId") Long goodsId, @RequestBody @Validated BuyMessageDto buyMessageDto) {
+        return orderService.buyGoods(goodsId, buyMessageDto);
     }
 
     /**
      * 支付/退款回调接口
      */
     @PostMapping("/notice")
-    public void payNotice(HttpServletRequest httpServletRequest){
+    public void payNotice(HttpServletRequest httpServletRequest) {
         orderService.payNotice(httpServletRequest);
     }
 
@@ -42,7 +46,9 @@ public class OrderController {
      * 继续支付
      */
     @PostMapping("/buy/continue/{outTradeNo}")
-    public Result<String> continuePay(@PathVariable("outTradeNo") Long outTradeNo){
+    @SaCheckLogin
+    @SaCheckRole("user")
+    public Result<String> continuePay(@PathVariable("outTradeNo") Long outTradeNo) {
         return orderService.continuePay(outTradeNo);
     }
 
@@ -50,7 +56,9 @@ public class OrderController {
      * 查看订单信息 只能看当前账号的的某个订单
      */
     @GetMapping("/{outTradeNo}")
-    public Result<Order> getOrderMessage(@PathVariable("outTradeNo") Long outTradeNo){
+    @SaCheckLogin
+    @SaCheckRole("user")
+    public Result<Order> getOrderMessage(@PathVariable("outTradeNo") Long outTradeNo) {
         return orderService.getOrderMessage(outTradeNo);
     }
 
@@ -58,7 +66,9 @@ public class OrderController {
      * 获取订单列表
      */
     @GetMapping("/list/{page}")
-    public Result<PageResult<Order>> getOrderPage(@PathVariable("page")Integer page){
+    @SaCheckLogin
+    @SaCheckRole("user")
+    public Result<PageResult<Order>> getOrderPage(@PathVariable("page") Integer page) {
         return orderService.getOrderPage(page);
     }
 
@@ -66,7 +76,9 @@ public class OrderController {
      * 关闭交易
      */
     @DeleteMapping("/close/{outTradeNo}")
-    public Result closeOrder(@PathVariable("outTradeNo") Long outTradeNo){
+    @SaCheckLogin
+    @SaCheckRole("user")
+    public Result closeOrder(@PathVariable("outTradeNo") Long outTradeNo) {
         return orderService.closeOrder(outTradeNo);
     }
 
@@ -74,7 +86,9 @@ public class OrderController {
      * 管理员修改订单状态
      */
     @PutMapping("/admin/{outTradeNo}")
-    public Result updateOrderState(@PathVariable("outTradeNo")Long outTradeNo,@RequestParam("state")String state){
-        return orderService.updateOrderState(outTradeNo,state);
+    @SaCheckLogin
+    @SaCheckRole("admin")
+    public Result updateOrderState(@PathVariable("outTradeNo") Long outTradeNo, @RequestParam("state") String state) {
+        return orderService.updateOrderState(outTradeNo, state);
     }
 }

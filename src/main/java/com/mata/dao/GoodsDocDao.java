@@ -1,10 +1,9 @@
 package com.mata.dao;
 
-import com.mata.EsDoc.GoodsDoc;
+import com.mata.esDoc.GoodsDoc;
 import com.mata.dto.PageResult;
 import com.mata.enumPackage.CosFileMkdir;
 import com.mata.pojo.Goods;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 

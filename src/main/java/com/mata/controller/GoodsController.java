@@ -1,5 +1,7 @@
 package com.mata.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.mata.dto.GoodsAddDto;
 import com.mata.dto.GoodsUpdateDto;
 import com.mata.dto.PageResult;
@@ -24,6 +26,8 @@ public class GoodsController {
      * 管理员添加商品
      */
     @PostMapping("/admin")
+    @SaCheckLogin
+    @SaCheckRole("admin")
     public Result addGoods(@Validated GoodsAddDto goodsAddDto) {
         return goodsService.addGoods(goodsAddDto);
     }
@@ -32,6 +36,8 @@ public class GoodsController {
      * 管理员删除商品
      */
     @DeleteMapping("/admin/{goodsId}")
+    @SaCheckLogin
+    @SaCheckRole("admin")
     public Result deleteGoods(@PathVariable("goodsId") Long goodId){
         return goodsService.deleteGoods(goodId);
     }
@@ -40,6 +46,8 @@ public class GoodsController {
      * 管理员修改商品
      */
     @PutMapping("/admin")
+    @SaCheckLogin
+    @SaCheckRole("admin")
     public Result updateGoods(@RequestBody @Validated GoodsUpdateDto goodsUpdateDto){
         return goodsService.updateGoods(goodsUpdateDto);
     }
@@ -48,6 +56,8 @@ public class GoodsController {
      * 管理员修改商品图片
      */
     @PutMapping("/admin/img/{goodsId}")
+    @SaCheckLogin
+    @SaCheckRole("admin")
     public Result updateGoodsImg(@PathVariable("goodsId")Long goodsId, @RequestParam MultipartFile goodsImg){
         return goodsService.updateGoodsImg(goodsId,goodsImg);
     }
@@ -56,6 +66,8 @@ public class GoodsController {
      * 管理员修改商品介绍
      */
     @PutMapping("/admin/introduction/{goodsId}")
+    @SaCheckLogin
+    @SaCheckRole("admin")
     public Result updateGoodsIntroduction(@PathVariable("goodsId")Long goodsId, @RequestParam String goodsIntroduction){
         return goodsService.updateGoodsInformation(goodsId,goodsIntroduction);
     }

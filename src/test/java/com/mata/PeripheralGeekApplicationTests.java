@@ -1,5 +1,6 @@
 package com.mata;
 
+import com.mata.dao.AuthDao;
 import com.mata.utils.AlipayUtil;
 import com.mata.utils.RedisCommonKey;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +19,14 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Slf4j
-class ReadShareAndBuyApplicationTests {
+class PeripheralGeekApplicationTests {
     @Autowired
     @Qualifier("userBloom")
     private RBloomFilter<Integer> userBloom;
@@ -89,7 +93,6 @@ class ReadShareAndBuyApplicationTests {
     @Test
     void testLock() throws InterruptedException {
         //boolean add = articleFilter.add(1831695980921217024L);
-        System.out.println(articleFilter.contains(1831697207713083392));
     }
 
     @Autowired
@@ -122,5 +125,20 @@ class ReadShareAndBuyApplicationTests {
         System.out.println(html);
     }
 
+    @Autowired
+    public AuthDao authDao;
+
+    @Test
+    void testA(){
+        getRoleList(10000,null);
+    }
+
+
+    public List<String> getRoleList(Object loginId, String loginType) {
+        List<String> list = new ArrayList<String>();
+        Collections.addAll(list,authDao.getRoleName(Integer.valueOf(loginId.toString())));
+        System.out.println(list);
+        return list;
+    }
 
 }

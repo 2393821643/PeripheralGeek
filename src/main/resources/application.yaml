@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: ReadShareAndBuy
+    name: PeripheralGeek
 
   profiles:
     active: dev
@@ -93,3 +93,19 @@ zfb:
   privateKey: ${mata.zfb.privateKey}
   alipayPublicKey: ${mata.zfb.alipayPublicKey}
   payNoticeUrl: ${mata.zfb.payNoticeUrl}
+
+sa-token:
+  token-name: ${mata.sa-token.token-name}
+  timeout: ${mata.sa-token.timeout}
+  active-timeout: ${mata.sa-token.active-timeout}
+  is-concurrent: ${mata.sa-token.is-concurrent}
+  is-share: ${mata.sa-token.is-share}
+  is-log: ${mata.sa-token.is-log}
+  jwt-secret-key: ${mata.sa-token.jwt-secret-key}
+
+mybatis-plus:
+  type-aliases-package: com.mata.pojo
+  mapper-locations: "classpath*:/mapper/**/*.xml"
+  configuration:
+    #开启驼峰命名
+    map-underscore-to-camel-case: true

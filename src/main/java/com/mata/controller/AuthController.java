@@ -65,6 +65,7 @@ public class AuthController {
 
 
     /**
+     * 账号/邮箱 密码登录
      * @param account  用户id/邮箱
      * @param password 密码
      * @return token字符串

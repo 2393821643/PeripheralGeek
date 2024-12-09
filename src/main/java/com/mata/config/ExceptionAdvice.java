@@ -1,5 +1,7 @@
 package com.mata.config;
 
+import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotRoleException;
 import com.mata.dto.Result;
 import com.mata.exception.BusinessException;
 import com.mata.exception.SystemException;
@@ -7,8 +9,10 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import java.util.Set;
@@ -49,6 +53,25 @@ public class ExceptionAdvice {
     public Result<?> handleBusinessException(BusinessException businessException){
         return Result.error(businessException.getMessage());
     }
+
+    /**
+     * 检查登录拦截器
+     */
+    @ExceptionHandler(value = NotLoginException.class)
+    public Result<?> handleNotLoginException(NotLoginException notLoginException, HttpServletResponse response){
+        response.setStatus(401);
+        return Result.error("请先登录");
+    }
+
+    /**
+     * 检查角色
+     */
+    // 拦截：缺少角色异常
+    @ExceptionHandler(NotRoleException.class)
+    public Result<?> handlerNotRoleException(NotRoleException e) {
+        return Result.error("您没有权限");
+    }
+
 
 //    /**
 //     * 系统异常处理

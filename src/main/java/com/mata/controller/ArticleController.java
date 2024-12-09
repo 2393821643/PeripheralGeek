@@ -1,6 +1,8 @@
 package com.mata.controller;
 
-import com.mata.EsDoc.ArticleDoc;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
+import com.mata.esDoc.ArticleDoc;
 import com.mata.dto.ArticleDto;
 import com.mata.dto.ArticleUpdateDto;
 import com.mata.dto.PageResult;
@@ -21,6 +23,8 @@ public class ArticleController {
      * 添加文章
      */
     @PostMapping("/user")
+    @SaCheckLogin
+    @SaCheckRole("user")
     public Result addArticle(@Validated ArticleDto articleDto){
        return articleService.addArticle(articleDto);
     }
@@ -53,6 +57,8 @@ public class ArticleController {
      *  删除文章
      */
     @DeleteMapping("/user/{articleId}")
+    @SaCheckLogin
+    @SaCheckRole("user")
     public Result deleteArticleById(@PathVariable("articleId") Long articleId){
         return articleService.deleteArticleById(articleId);
     }
@@ -61,6 +67,7 @@ public class ArticleController {
      * 修改文章标题，内容 通过文章Id
      */
     @PutMapping("/user")
+    @SaCheckLogin
     public Result updateArticle(@Validated ArticleUpdateDto articleUpdateDto){
         return articleService.updateArticle(articleUpdateDto);
     }
@@ -69,6 +76,7 @@ public class ArticleController {
      * 修改文章图片 通过文章Id
      */
     @PutMapping("/user/img")
+    @SaCheckLogin
     public Result updateArticleImg(@RequestParam("articleId")Long articleId, @RequestParam("articleImg")MultipartFile img){
         return articleService.updateArticleImg(articleId,img);
     }

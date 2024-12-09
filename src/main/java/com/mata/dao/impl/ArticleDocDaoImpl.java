@@ -2,11 +2,9 @@ package com.mata.dao.impl;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.mata.EsDoc.ArticleDoc;
+import com.mata.esDoc.ArticleDoc;
 import com.mata.dao.ArticleDocDao;
 import com.mata.dto.PageResult;
-import com.mata.dto.Result;
-import com.mata.pojo.Goods;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;

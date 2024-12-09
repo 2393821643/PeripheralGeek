@@ -1,11 +1,10 @@
-package com.mata.EsDoc;
+package com.mata.esDoc;
 
 
 import com.mata.pojo.Goods;
 import lombok.*;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 

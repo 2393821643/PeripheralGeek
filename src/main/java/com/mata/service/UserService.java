@@ -1,8 +1,10 @@
 package com.mata.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.mata.dto.ReceiptInformationDto;
 import com.mata.dto.Result;
 import com.mata.enumPackage.UserPositioning;
+import com.mata.pojo.ReceiptInformation;
 import com.mata.pojo.User;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,7 +19,7 @@ public interface UserService extends IService<User> {
     /**
      * 获取某个用户的个人信息 通过userid
      */
-    Result<User> getUserInformationById(Integer userId, UserPositioning userPositioning);
+    Result<User> getUserInformationById(Integer userId);
 
     /**
      * 修改用户信息 发送消息队列
@@ -36,4 +38,13 @@ public interface UserService extends IService<User> {
     Result<String> updateUserHeader(MultipartFile img);
 
 
+    /**
+     * 设置用户默认收获信息
+     */
+    Result addOrUpdateReceiptInformation(ReceiptInformationDto receiptInformationDto);
+
+    /**
+     * 获取用户默认收获信息
+     */
+    Result<ReceiptInformation> getReceiptInformation();
 }

@@ -1,13 +1,11 @@
 package com.mata.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.crypto.SmUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.mata.dao.AdminDao;
-import com.mata.enumPackage.Role;
-import com.mata.pojo.Admin;
 import com.mata.utils.JwtUtil;
 import com.mata.dao.UserDao;
 import com.mata.dto.Result;
@@ -17,10 +15,8 @@ import com.mata.service.AuthService;
 import com.mata.utils.EmailMessage;
 import com.mata.utils.RedisCommonKey;
 import com.mata.utils.SendEmailUtil;
-import org.redisson.api.RBloomFilter;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -41,15 +37,6 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private UserDao userDao;
 
-    @Autowired
-    private AdminDao adminDao;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    @Qualifier("userBloom")
-    private RBloomFilter<Integer> userBloom;
 
 
 
@@ -135,14 +122,13 @@ public class AuthServiceImpl implements AuthService {
                     .password(RandomUtil.randomString(12))
                     .sex("男")
                     .email(email)
+                    .roleId(1)
                     .build();
             userDao.insert(user);
-            // 创建完加入用户id布隆过滤器
-            userBloom.add(user.getUserId());
         }
-        // 将userId存入token 并返回
-        String token = jwtUtil.createToken(user.getUserId(), Role.User);
-        return Result.success(token, "登录成功");
+        // 返回token
+        StpUtil.login(user.getUserId());
+        return Result.success(StpUtil.getTokenValue(), "登录成功");
     }
 
     /**
@@ -175,6 +161,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
+     * 通过账号/邮箱 密码登录
      * @param account  用户id/邮箱
      * @param password 密码
      * @return token字符串
@@ -187,9 +174,9 @@ public class AuthServiceImpl implements AuthService {
         if (email) {
             User resultUser = getUserByEmailAndPassword(account, password);
             if (resultUser != null) {
-                //设置一个token
-                String token = jwtUtil.createToken(resultUser.getUserId(), Role.User);
-                return Result.success(token, "登录成功");
+                // 登录
+                StpUtil.login(resultUser.getUserId());
+                return Result.success(StpUtil.getTokenValue(), "登录成功");
             } else {
                 return Result.error("密码错误");
             }
@@ -197,8 +184,12 @@ public class AuthServiceImpl implements AuthService {
             // 如果是id
             User resultUser = getUserByIdAndPassword(account, password);
             if (resultUser != null) {
-                String token = jwtUtil.createToken(resultUser.getUserId(), Role.User);
-                return Result.success(token, "登录成功");
+                // 登录
+                StpUtil.login(resultUser.getUserId());
+                if (resultUser.getRoleId() != 1){
+                    return Result.error("此账号角色不在此页面登录");
+                }
+                return Result.success(StpUtil.getTokenValue(), "登录成功");
             } else {
                 return Result.error("密码错误");
             }
@@ -216,7 +207,7 @@ public class AuthServiceImpl implements AuthService {
     private User getUserByEmailAndPassword(String email, String password) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         //设置条件，password进行加密
-        wrapper.select(User::getUserId);
+        wrapper.select(User::getUserId,User::getRoleId);
         wrapper.eq(User::getEmail, email).eq(User::getPassword, SmUtil.sm3(password));
         return userDao.selectOne(wrapper);
     }
@@ -238,7 +229,7 @@ public class AuthServiceImpl implements AuthService {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         //设置条件，password进行加密
         wrapper.eq(User::getUserId, userId).eq(User::getPassword, SmUtil.sm3(password));
-        wrapper.select(User::getUserId);
+        wrapper.select(User::getUserId,User::getRoleId);
         return userDao.selectOne(wrapper);
     }
 
@@ -258,16 +249,19 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("密码错误");
         }
         // 设置查找条件
-        LambdaQueryWrapper<Admin> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(Admin::getAdminId)
-                .eq(Admin::getAdminId, adminId)
-                .eq(Admin::getPassword, SmUtil.sm3(password));
-        Admin resultAdmin = adminDao.selectOne(wrapper);
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(User::getUserId,User::getRoleId)
+                .eq(User::getUserId, adminId)
+                .eq(User::getPassword, SmUtil.sm3(password));
+        User resultAdmin = userDao.selectOne(wrapper);
         if (resultAdmin == null) {
             return Result.error("密码错误");
         }
-        String token = jwtUtil.createToken(resultAdmin.getAdminId(), Role.Admin);
-        return Result.success(token,"登录成功");
+        if (resultAdmin.getRoleId() == 1){
+            return Result.error("此账号角色不在此页面登录");
+        }
+        StpUtil.login(resultAdmin.getUserId());
+        return Result.success(StpUtil.getTokenValue(),"登录成功");
     }
 
 }

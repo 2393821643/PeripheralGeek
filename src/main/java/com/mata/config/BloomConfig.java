@@ -10,17 +10,6 @@ import org.springframework.context.annotation.Configuration;
 public class BloomConfig {
     @Autowired
     private RedissonClient redissonClient;
-
-    /**
-     * 用户id的bloom过滤器
-     */
-    @Bean("userBloom")
-    public RBloomFilter<Integer> userBloom(){
-        RBloomFilter<Integer> bloomFilter = redissonClient.getBloomFilter("userIdBloom");
-        bloomFilter.tryInit(1000000,0.03);
-        return bloomFilter;
-    }
-
     /**
      * 商品id的bloom过滤器
      */
@@ -41,13 +30,4 @@ public class BloomConfig {
         return bloomFilter;
     }
 
-    /**
-     * 文章的bloom过滤器
-     */
-    @Bean("articleBloom")
-    public RBloomFilter<Long> articleBloom(){
-        RBloomFilter<Long> bloomFilter = redissonClient.getBloomFilter("articleIdBloom");
-        bloomFilter.tryInit(1000000,0.03);
-        return bloomFilter;
-    }
 }

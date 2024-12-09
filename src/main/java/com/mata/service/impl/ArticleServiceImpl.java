@@ -1,13 +1,13 @@
 package com.mata.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.mata.EsDoc.ArticleDoc;
+import com.mata.esDoc.ArticleDoc;
 import com.mata.dao.ArticleDao;
 import com.mata.dao.ArticleDocDao;
 import com.mata.dto.ArticleDto;
@@ -15,9 +15,7 @@ import com.mata.dto.ArticleUpdateDto;
 import com.mata.dto.PageResult;
 import com.mata.dto.Result;
 import com.mata.enumPackage.CosFileMkdir;
-import com.mata.holder.Holder;
 import com.mata.pojo.Article;
-import com.mata.pojo.Order;
 import com.mata.service.ArticleService;
 import com.mata.utils.CosClientUtil;
 import com.mata.utils.RedisCommonKey;
@@ -44,14 +42,6 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> implements ArticleService {
-    @Autowired
-    @Qualifier("articleBloom")
-    private RBloomFilter<Long> articleBloom;
-
-    @Autowired
-    @Qualifier("userBloom")
-    private RBloomFilter<Integer> userBloom;
-
     @Value("${file.path}")
     private String filePath;
 
@@ -67,8 +57,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
-    @Autowired
-    private RedissonClient redissonClient;
 
     /**
      * 添加文章
@@ -76,8 +64,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     @Override
     public Result addArticle(ArticleDto articleDto) {
         long articleId = IdUtil.getSnowflakeNextId();
-        // 生成文章id,加入bloom
-        articleBloom.add(articleId);
         // 发送图片
         CompletableFuture<String> writeImg = CompletableFuture.supplyAsync(() -> {
             try {
@@ -106,11 +92,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
                 .articleContextUrl(articleContextUrl)
                 .articleImgUrl(articleImgUrl)
                 .createTime(LocalDateTime.now())
-                .userId(Holder.getUser())
+                .userId(StpUtil.getLoginIdAsInt())
                 .articleState("已审核")
                 .build();
         // 发送信息队列
-        rabbitTemplate.convertAndSend("ArticleExchange", "addArticleKey", JSONUtil.toJsonStr(article));
+        save(article);
+        addArticleToEs(article);
         return Result.success("提交文章成功");
     }
 
@@ -150,19 +137,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     }
 
     /**
-     * 添加到Mysql
-     */
-    public void addArticleToMysql(Article article) {
-        save(article);
-        // 缓存写入
-        String articleJson = JSONUtil.toJsonStr(article);
-        stringRedisTemplate.opsForValue().set(RedisCommonKey.ARTICLE_PRE_KEY + article.getArticleId(), articleJson, RedisCommonKey.ARTICLE_TIME, TimeUnit.MINUTES);
-    }
-
-    /**
      * 添加到Es
      */
-    public void addArticleToEs(Article article) {
+    private void addArticleToEs(Article article) {
         ArticleDoc articleDoc = new ArticleDoc(article);
         articleDocDao.addArticle(articleDoc);
 
@@ -173,45 +150,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
      */
     @Override
     public Result<PageResult<Article>> getArticleByUserId(Integer userId, Integer page) {
-        PageResult<Article> resultPage = null;
-        // 查看用户是否存在
-        boolean isExist = userBloom.contains(userId);
-        if (!isExist) {
-            return Result.error("用户不存在");
-        }
-        // 查Redis
-        String resultPageJson = stringRedisTemplate.opsForValue().get(RedisCommonKey.ARTICLE_USER_PRE_KEY + userId + ":" + page);
-        if (!StrUtil.isEmpty(resultPageJson)) {
-            resultPage = JSONUtil.toBean(resultPageJson, PageResult.class);
-            return Result.success(resultPage);
-        }
-        // 加锁，查数据库
-        RLock lock = redissonClient.getLock(RedisCommonKey.ARTICLE_USER_LOCK_PRE_KEY + userId + ":" + page);
-        try {
-            boolean isLock = lock.tryLock(0, RedisCommonKey.ARTICLE_USER_LOCK_TIME, TimeUnit.SECONDS);
-            if (isLock) {
-                Page<Article> articlePage = lambdaQuery()
-                        .select(Article::getArticleId, Article::getArticleTitle, Article::getArticleImgUrl, Article::getArticleContextUrl)
-                        .eq(Article::getUserId, userId)
-                        .eq(Article::getArticleState, "已审核")
-                        .orderByDesc(Article::getCreateTime)
-                        .page(new Page<>(page, 20));
-                resultPage = new PageResult<>(articlePage.getTotal(), articlePage.getRecords());
-                // 写入缓存
-                stringRedisTemplate.opsForValue().set(RedisCommonKey.ARTICLE_USER_PRE_KEY + userId + ":" + page, JSONUtil.toJsonStr(resultPage), RedisCommonKey.ARTICLE_USER_TIME, TimeUnit.MINUTES);
-            } else {
-                Thread.sleep(50);
-                getArticleByUserId(userId, page);
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            // 解开锁
-            boolean heldByCurrentThread = lock.isHeldByCurrentThread();
-            if (heldByCurrentThread) {
-                lock.unlock();
-            }
-        }
+        Page<Article> articlePage = lambdaQuery()
+                .select(Article::getArticleId, Article::getArticleTitle, Article::getArticleImgUrl, Article::getArticleContextUrl)
+                .eq(Article::getUserId, userId)
+                .eq(Article::getArticleState, "已审核")
+                .orderByDesc(Article::getCreateTime)
+                .page(new Page<>(page, 20));
+        PageResult<Article> resultPage = new PageResult<>(articlePage.getTotal(), articlePage.getRecords());
         return Result.success(resultPage);
     }
 
@@ -220,47 +165,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
      */
     @Override
     public Result<Article> getArticleById(Long articlesId) {
-        Article article = null;
-        // 查bloom 是否存在此文章
-        boolean isExist = articleBloom.contains(articlesId);
-        if (!isExist) {
-            return Result.error("不存在此文章");
-        }
-        // 查redis
-        String articleJson = stringRedisTemplate.opsForValue().get(RedisCommonKey.ARTICLE_PRE_KEY + articlesId);
-        if (!StrUtil.isEmpty(articleJson)) {
-            article = JSONUtil.toBean(articleJson, Article.class);
-            if (Objects.equals(article.getArticleState(), "未审核")){
-                return Result.error("不存在此文章");
-            }
-            return Result.success(article);
-        }
-        // 加锁，查数据库
-        RLock lock = redissonClient.getLock(RedisCommonKey.ARTICLE_LOCK_PRE_KEY + articlesId);
-        try {
-            boolean isLock = lock.tryLock(0, RedisCommonKey.ARTICLE_LOCK_TIME, TimeUnit.SECONDS);
-            if (isLock) {
-
-                LambdaQueryWrapper<Article> wapper = new LambdaQueryWrapper<>();
-                wapper.select(Article::getArticleId, Article::getArticleTitle, Article::getArticleImgUrl, Article::getArticleContextUrl)
-                        .eq(Article::getArticleId, articlesId)
-                        .eq(Article::getArticleState, "已审核");
-                article = getOne(wapper);
-                // 写入缓存
-                stringRedisTemplate.opsForValue().set(RedisCommonKey.ARTICLE_PRE_KEY + articlesId,JSONUtil.toJsonStr(article),RedisCommonKey.ARTICLE_TIME,TimeUnit.MINUTES);
-            } else {
-                Thread.sleep(50);
-                getArticleById(articlesId);
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            // 解开锁
-            boolean heldByCurrentThread = lock.isHeldByCurrentThread();
-            if (heldByCurrentThread) {
-                lock.unlock();
-            }
-        }
+        LambdaQueryWrapper<Article> wapper = new LambdaQueryWrapper<>();
+        wapper.select(Article::getArticleId, Article::getArticleTitle, Article::getArticleImgUrl, Article::getArticleContextUrl)
+                .eq(Article::getArticleId, articlesId)
+                .eq(Article::getArticleState, "已审核");
+        Article article = getOne(wapper);
         return Result.success(article);
     }
 
@@ -279,15 +188,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     @Override
     public Result deleteArticleById(Long articleId) {
         // 检查文章是否存在
-        boolean exist = checkArticleIsUserHave(articleId, Holder.getUser());
+        boolean exist = checkArticleIsUserHave(articleId, StpUtil.getLoginIdAsInt());
         if (!exist){
             return Result.error("此文章不存在");
         }
-        // 删除缓存
-        stringRedisTemplate.delete(RedisCommonKey.ARTICLE_PRE_KEY+articleId);
-        deleteKeysByPrefix(RedisCommonKey.ARTICLE_USER_PRE_KEY+Holder.getUser());
-        // 异步删除
-        rabbitTemplate.convertAndSend("ArticleExchange","deleteArticleKey",articleId.toString());
+        // 删es
+        articleDocDao.deleteArticle(articleId.toString());
+        // 删mysql
+        removeById(articleId);
         return Result.success("删除成功");
     }
 
@@ -295,30 +203,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
      * 检查文章和用户是否对应
      */
     private boolean checkArticleIsUserHave(Long articleId,Integer userId){
-        boolean contains = articleBloom.contains(articleId);
-        if (!contains){
-            return false;
-        }
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<>();
         wrapper.select(Article::getArticleId)
                 .eq(Article::getArticleId,articleId)
                 .eq(Article::getUserId,userId);
-        Article a = getOne(wrapper);
-        return a != null;
-    }
-
-    /**
-     * 从mysql中删除
-     */
-    public void deleteToMysql(Long articleId){
-        removeById(articleId);
-    }
-
-    /**
-     *  删除文章从es
-     */
-    public void deleteToEs(String articleId){
-        articleDocDao.deleteArticle(articleId);
+        Article article = getOne(wrapper);
+        return article != null;
     }
 
     /**
@@ -329,13 +219,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         Long articleId = articleUpdateDto.getArticleId();
         String articleContextUrl = null;
         // 检查文章是否存在
-        boolean exist = checkArticleIsUserHave(articleId, Holder.getUser());
+        boolean exist = checkArticleIsUserHave(articleId, StpUtil.getLoginIdAsInt());
         if (!exist){
             return Result.error("此文章不存在");
         }
-        // 删除缓存
-        stringRedisTemplate.delete(RedisCommonKey.ARTICLE_PRE_KEY+articleId);
-        deleteKeysByPrefix(RedisCommonKey.ARTICLE_USER_PRE_KEY+Holder.getUser());
         // 查找源文章信息
         Article article = getById(articleId);
         // 更新文章
@@ -348,27 +235,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         // 重新构建文章对象
         article.setArticleTitle(articleUpdateDto.getTitle());
         article.setArticleContextUrl(articleContextUrl);
-        // 异步发送修改
-        rabbitTemplate.convertAndSend("ArticleExchange","updateArticleKey",JSONUtil.toJsonStr(article));
+        // 修改
+        articleDocDao.updateArticle(new ArticleDoc(article));
+        updateById(article);
         return Result.success("修改成功");
     }
-
-    /**
-     * 修改文章信息到Mysql
-     */
-    @Override
-    public void updateToMysql(Article article) {
-        updateById(article);
-    }
-
-    /**
-     * 修改文章信息到es
-     */
-    @Override
-    public void updateToEs(Article article) {
-        articleDocDao.updateArticle(new ArticleDoc(article));
-    }
-
     /**
      * 修改文章图片 通过文章Id
      */
@@ -376,13 +247,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     public Result updateArticleImg(Long articleId, MultipartFile img) {
         String articleImgUrl = null;
         // 检查文章是否存在
-        boolean exist = checkArticleIsUserHave(articleId, Holder.getUser());
+        boolean exist = checkArticleIsUserHave(articleId, StpUtil.getLoginIdAsInt());
         if (!exist){
             return Result.error("此文章不存在");
         }
         // 删除缓存
         stringRedisTemplate.delete(RedisCommonKey.ARTICLE_PRE_KEY+articleId);
-        deleteKeysByPrefix(RedisCommonKey.ARTICLE_USER_PRE_KEY+Holder.getUser());
+        deleteKeysByPrefix(RedisCommonKey.ARTICLE_USER_PRE_KEY+StpUtil.getLoginIdAsInt());
         // 查找源文章信息
         Article article = getById(articleId);
         try {

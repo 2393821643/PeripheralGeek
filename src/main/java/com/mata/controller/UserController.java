@@ -1,8 +1,12 @@
 package com.mata.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.stp.StpUtil;
+import com.mata.dto.ReceiptInformationDto;
 import com.mata.dto.Result;
 import com.mata.enumPackage.UserPositioning;
-import com.mata.holder.Holder;
+import com.mata.pojo.ReceiptInformation;
 import com.mata.pojo.User;
 import com.mata.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,18 +29,10 @@ public class UserController {
      * 获取当前用户的个人信息
      */
     @GetMapping("/information")
+    @SaCheckLogin
     public Result<User> getCurrentUserInformation(){
-        Integer userId = Holder.getUser();
-        return userService.getUserInformationById(userId, UserPositioning.My);
-    }
-
-    /**
-     * 获取指定id用户的个人信息
-     */
-    @GetMapping("/information/other")
-    public Result<User> getUserInformationById(@RequestParam("userId")
-                                           @NotNull(message = "请输入要搜索用户的id") Integer userId){
-        return userService.getUserInformationById(userId,UserPositioning.Other);
+        int userId = StpUtil.getLoginIdAsInt();
+        return userService.getUserInformationById(userId);
     }
 
     /**
@@ -44,8 +40,27 @@ public class UserController {
      *
      */
     @PutMapping("/information")
+    @SaCheckLogin
     public Result updateUserInformationMessage(@RequestBody @Validated User user){
         return userService.updateUserInformationMessage(user);
+    }
+
+    /**
+     * 设置用户默认收获信息
+     */
+    @PutMapping("/information/recipient")
+    @SaCheckLogin
+    public Result addOrUpdateReceiptInformation(@RequestBody ReceiptInformationDto receiptInformationDto){
+        return userService.addOrUpdateReceiptInformation(receiptInformationDto);
+    }
+
+    /**
+     * 获取用户默认收获信息
+     */
+    @GetMapping("/information/recipient")
+    @SaCheckLogin
+    public Result<ReceiptInformation> getReceiptInformation(){
+        return userService.getReceiptInformation();
     }
 
     /**
@@ -53,7 +68,6 @@ public class UserController {
      */
     @GetMapping("/information/name")
     public Result<List<User>> getUserInformationByName(@RequestParam("username") String username){
-
         return userService.getUserInformationByName(username);
     }
 
@@ -61,6 +75,7 @@ public class UserController {
      * 更新用户头像
      */
     @PutMapping("/header")
+    @SaCheckLogin
     public Result<String> updateUserHeader(@RequestParam("img") MultipartFile img){
         return userService.updateUserHeader(img);
     }

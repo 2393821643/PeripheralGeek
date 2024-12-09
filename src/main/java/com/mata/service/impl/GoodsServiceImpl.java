@@ -3,9 +3,8 @@ package com.mata.service.impl;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.mata.EsDoc.GoodsDoc;
+import com.mata.esDoc.GoodsDoc;
 import com.mata.dao.GoodsDao;
 import com.mata.dao.GoodsDocDao;
 import com.mata.dto.GoodsAddDto;
@@ -69,8 +68,6 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
     public Result addGoods(GoodsAddDto goodsAddDto) {
         // 生成商品id
         Long goodsId = IdUtil.getSnowflakeNextId();
-        // 加入布隆过滤器
-        goodsBloomFilter.add(goodsId);
         // 发送图片
         CompletableFuture<String> writeImg = CompletableFuture.supplyAsync(() -> {
             try {
@@ -104,8 +101,10 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
                 .goodsIntroduction(goodsIntroductionUrl)
                 .goodsPrice(goodsAddDto.getGoodsPrice())
                 .build();
-        // 发送信息队列
-        rabbitTemplate.convertAndSend("GoodsExchange", "addGoodsKey", JSONUtil.toJsonStr(goods));
+        // 写入mysql
+        save(goods);
+        // 写入es
+        goodsDocDao.addGoods(new GoodsDoc(goods));
         return Result.success("添加商品成功");
     }
 
@@ -127,46 +126,20 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
     }
 
     /**
-     * goods写入mysql
-     */
-    public void addGoodsToMysql(Goods goods) {
-        save(goods);
-        // 更新redis缓存
-        stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY+goods.getGoodsId(),JSONUtil.toJsonStr(goods),RedisCommonKey.GOODS_TIME,TimeUnit.MINUTES);
-    }
-
-    /**
-     * goods写入es
-     */
-    public void addGoodsToEs(Goods goods) {
-        goodsDocDao.addGoods(new GoodsDoc(goods));
-    }
-
-    /**
      * 管理员删除商品
      * 发送信息队列，删除mysql和es的数据
      */
     @Override
     public Result deleteGoods(Long goodsId) {
         rabbitTemplate.convertAndSend("GoodsExchange", "deleteGoodsKey", goodsId.toString());
+        // 数据库删除
+        removeById(goodsId);
+        // 缓存删除
+        stringRedisTemplate.delete(RedisCommonKey.GOODS_PRE_KEY+goodsId);
+        // es删除
+        goodsDocDao.deleteGoods(goodsId.toString());
         return Result.success("删除成功");
     }
-
-    /**
-     * mysql删除商品
-     */
-    public void deleteGoodsToMysql(Long goodsId) {
-        removeById(goodsId);
-        stringRedisTemplate.delete(RedisCommonKey.GOODS_PRE_KEY+goodsId);
-    }
-
-    /**
-     * ES删除商品
-     */
-    public void deleteGoodsToEs(String goodsId) {
-        goodsDocDao.deleteGoods(goodsId);
-    }
-
 
     /**
      * 管理员修改商品
@@ -182,16 +155,15 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
          goods.setGoodsConnectionType(goodsUpdateDto.getGoodsConnectionType());
          goods.setGoodsCount(goodsUpdateDto.getGoodsCount());
          goods.setGoodsPrice(goodsUpdateDto.getGoodsPrice());
-        String goodsJson = JSONUtil.toJsonStr(goods);
-        rabbitTemplate.convertAndSend("GoodsExchange", "updateGoodsKey", goodsJson);
+        updateGoodsToMysql(goods);
+        updateGoodsToEs(goods);
         return Result.success("修改成功");
     }
 
     /**
      * mysql修改商品
      */
-    @Override
-    public void updateGoodsToMysql(Goods goods) {
+    private void updateGoodsToMysql(Goods goods) {
         updateById(goods);
         String goodsJson = JSONUtil.toJsonStr(goods);
         // 更新redis缓存
@@ -201,8 +173,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
     /**
      * es修改商品
      */
-    @Override
-    public void updateGoodsToEs(Goods goods) {
+    private void updateGoodsToEs(Goods goods) {
         GoodsDoc goodsDoc = new GoodsDoc(goods);
         goodsDocDao.updateGoods(goodsDoc);
     }
@@ -227,17 +198,8 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
                 .goodsId(goodsId)
                 .goodsUrl(imgUrl)
                 .build();
-        String goodsJson = JSONUtil.toJsonStr(goods);
-        rabbitTemplate.convertAndSend("GoodsExchange", "updateGoodsImgKey", goodsJson);
+        goodsDocDao.updateGoodsFile(goods, CosFileMkdir.GoodsImg);
         return Result.success("修改图片成功");
-    }
-
-    /**
-     * 更新商品的图片或介绍的地址到es
-     */
-    @Override
-    public void updateGoodsFileToEs(Goods goods, CosFileMkdir cosFileMkdir) {
-        goodsDocDao.updateGoodsFile(goods, cosFileMkdir);
     }
 
     /**
@@ -260,8 +222,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
                 .goodsId(goodsId)
                 .goodsIntroduction(imgInfomationUrl)
                 .build();
-        String goodsJson = JSONUtil.toJsonStr(goods);
-        rabbitTemplate.convertAndSend("GoodsExchange", "updateGoodsImgKey", goodsJson);
+        goodsDocDao.updateGoodsFile(goods, CosFileMkdir.GoodsImg);
         return Result.success("修改商品介绍成功");
     }
 
@@ -284,6 +245,9 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
     }
 
 
+    /**
+     * 搜索商品通过id
+     */
     @Override
     public Result<Goods> getGoodsById(Long goodsId) {
         Goods resultGoods = null;

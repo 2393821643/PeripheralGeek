@@ -2,7 +2,7 @@ package com.mata.dao.impl;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.mata.EsDoc.GoodsDoc;
+import com.mata.esDoc.GoodsDoc;
 import com.mata.dao.GoodsDocDao;
 import com.mata.dto.PageResult;
 import com.mata.enumPackage.CosFileMkdir;
@@ -15,7 +15,6 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;

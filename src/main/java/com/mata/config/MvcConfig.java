@@ -1,7 +1,6 @@
 package com.mata.config;
 
-import com.mata.interceptor.AdminLoginInterceptor;
-import com.mata.interceptor.UserLoginInterceptor;
+import cn.dev33.satoken.interceptor.SaInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -10,11 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class MvcConfig implements WebMvcConfigurer {
-    @Autowired
-    private UserLoginInterceptor userLoginInterceptor;
 
-    @Autowired
-    private AdminLoginInterceptor adminLoginInterceptor;
     static final String ORIGINS[] = new String[]{"GET", "POST", "PUT", "DELETE","OPTIONS"};
 
     /**
@@ -34,17 +29,6 @@ public class MvcConfig implements WebMvcConfigurer {
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(userLoginInterceptor)
-                .addPathPatterns("/user/**")
-                .addPathPatterns("/order/**")
-                .addPathPatterns("/article/user/**")
-                .excludePathPatterns("/user/information/**")
-                .excludePathPatterns("/order/notice")
-                .excludePathPatterns("/order/admin/**");
-        registry.addInterceptor(adminLoginInterceptor)
-                .addPathPatterns("/admin/**")
-                .addPathPatterns("/order/admin/**")
-                .addPathPatterns("/goods/admin/**")
-                .addPathPatterns("/article/admin/**");
+        registry.addInterceptor(new SaInterceptor()).addPathPatterns("/**");
     }
 }

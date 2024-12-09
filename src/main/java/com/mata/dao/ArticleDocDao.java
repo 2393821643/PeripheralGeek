@@ -1,8 +1,7 @@
 package com.mata.dao;
 
-import com.mata.EsDoc.ArticleDoc;
+import com.mata.esDoc.ArticleDoc;
 import com.mata.dto.PageResult;
-import com.mata.dto.Result;
 
 public interface ArticleDocDao {
     /**

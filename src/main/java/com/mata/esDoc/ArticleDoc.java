@@ -1,11 +1,7 @@
-package com.mata.EsDoc;
+package com.mata.esDoc;
 
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.mata.pojo.Article;
-import com.mata.pojo.Goods;
 import lombok.*;
 
 import java.util.ArrayList;
