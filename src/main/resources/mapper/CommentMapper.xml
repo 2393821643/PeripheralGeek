@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mata.model.comment.dao.CommentDao">
+
+
+    <select id="getComment" resultType="com.mata.model.comment.vo.CommentVo">
+        SELECT c.comment_id,
+               c.comment_context,
+               c.good_count,
+               c.create_time,
+               c.user_id,
+               c.target_id,
+               u.head_url,
+               u.username
+        FROM tb_comment c LEFT JOIN tb_user u
+                                    ON u.user_id = c.user_id
+        WHERE target_id = #{targetId}
+    </select>
+</mapper>

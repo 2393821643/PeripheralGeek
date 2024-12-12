@@ -30,4 +30,14 @@ public class BloomConfig {
         return bloomFilter;
     }
 
+    /**
+     * 评论点赞的布隆过滤器
+     */
+    @Bean("commentGoodCountBloom")
+    public RBloomFilter<String> commentGoodCountBloom(){
+        RBloomFilter<String> bloomFilter = redissonClient.getBloomFilter("commentGoodCountBloom");
+        bloomFilter.tryInit(100000000,0.03);
+        return bloomFilter;
+    }
+
 }
