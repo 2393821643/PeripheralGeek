@@ -1,6 +1,7 @@
 package com.mata.model.article.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -14,8 +15,11 @@ import com.mata.model.article.dto.ArticleUpdateDto;
 import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
 import com.mata.common.enumPackage.CosFileMkdir;
+import com.mata.model.article.vo.ArticleVo;
+import com.mata.model.user.dao.UserDao;
 import com.mata.pojo.Article;
 import com.mata.model.article.service.ArticleService;
+import com.mata.pojo.User;
 import com.mata.utils.CosClientUtil;
 import com.mata.common.redisKey.RedisCommonKey;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -31,6 +35,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -49,6 +56,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private UserDao userDao;
 
 
     /**
@@ -88,28 +98,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
                 .userId(StpUtil.getLoginIdAsInt())
                 .articleState("已审核")
                 .build();
-        // 发送信息队列
         save(article);
         addArticleToEs(article);
         return Result.success("提交文章成功");
-    }
-
-    /**
-     * 删除缓存前缀key
-     */
-    private void deleteKeysByPrefix(String prefix) {
-        // 使用SCAN命令遍历所有匹配的键
-        ScanOptions options = ScanOptions.scanOptions().match(prefix + "*").count(100).build();
-        try (Cursor<byte[]> cursor = stringRedisTemplate.getConnectionFactory().getConnection().scan(options)) {
-            while (cursor.hasNext()) {
-                byte[] keyBytes = cursor.next();
-                String key = new String(keyBytes);
-                stringRedisTemplate.delete(key);
-            }
-        } catch (Exception e) {
-            // 处理异常
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -157,22 +148,42 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
      * 根据文章id获取文章
      */
     @Override
-    public Result<Article> getArticleById(Long articlesId) {
-        LambdaQueryWrapper<Article> wapper = new LambdaQueryWrapper<>();
-        wapper.select(Article::getArticleId, Article::getArticleTitle, Article::getArticleImgUrl, Article::getArticleContextUrl)
-                .eq(Article::getArticleId, articlesId)
-                .eq(Article::getArticleState, "已审核");
-        Article article = getOne(wapper);
-        return Result.success(article);
+    public Result<ArticleVo> getArticleById(Long articlesId) {
+        ArticleVo articleById = baseMapper.getArticleById(articlesId);
+        return Result.success(articleById);
     }
 
     /**
      * 根据文章名获取文章
      */
     @Override
-    public Result<PageResult<ArticleDoc>> getArticleByName(String articleName,Integer page) {
+    public Result<PageResult<ArticleVo>> getArticleByName(String articleName,Integer page) {
         PageResult<ArticleDoc> resultPage = articleDocDao.getArticleByName(articleName, page);
-        return Result.success(resultPage);
+        // 返回的pageResult
+        PageResult<ArticleVo> articleVoPageResult = new PageResult<>();
+        articleVoPageResult.setTotal(resultPage.getTotal());
+        ArrayList<ArticleVo> articleVoList = new ArrayList<>();
+        // 将resultPage中的ArticleDoc转为ArticleVo(将user的信息注入)
+        List<ArticleDoc> articleDocList = resultPage.getRecords();
+        List<Integer> userIdList = new ArrayList<>();
+        for (ArticleDoc articleDoc:articleDocList){
+            userIdList.add(articleDoc.getUserId());
+        }
+        // 批量查询
+        List<User> users = userDao.selectBatchIds(userIdList);
+        // 组装user信息
+        for (ArticleDoc articleDoc : articleDocList){
+            for (User user : users){
+                if (Objects.equals(articleDoc.getUserId(), user.getUserId())){
+                    ArticleVo articleVo = BeanUtil.copyProperties(articleDoc, ArticleVo.class);
+                    articleVo.setUsername(user.getUsername());
+                    articleVo.setHeadUrl(user.getHeadUrl());
+                    articleVoList.add(articleVo);
+                }
+            }
+        }
+        articleVoPageResult.setRecords(articleVoList);
+        return Result.success(articleVoPageResult);
     }
 
     /**
@@ -244,9 +255,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         if (!exist){
             return Result.error("此文章不存在");
         }
-        // 删除缓存
-        stringRedisTemplate.delete(RedisCommonKey.ARTICLE_PRE_KEY+articleId);
-        deleteKeysByPrefix(RedisCommonKey.ARTICLE_USER_PRE_KEY+StpUtil.getLoginIdAsInt());
         // 查找源文章信息
         Article article = getById(articleId);
         try {
@@ -256,8 +264,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
             throw new RuntimeException(e);
         }
         article.setArticleImgUrl(articleImgUrl);
-        // 异步发送
-        rabbitTemplate.convertAndSend("ArticleExchange","updateArticleKey",JSONUtil.toJsonStr(article));
+        updateById(article);
         return Result.success("修改成功");
     }
 

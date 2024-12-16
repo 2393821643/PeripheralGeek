@@ -34,6 +34,7 @@ public class ArticleDoc {
         this.articleTitle = article.getArticleTitle();
         this.articleContextUrl = article.getArticleContextUrl();
         this.articleImgUrl = article.getArticleImgUrl();
+        this.userId = article.getUserId();
         this.articleState = article.getArticleState();
         List<String> suggestionList = new ArrayList<>();
         Collections.addAll(suggestionList,this.articleTitle);

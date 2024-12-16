@@ -6,6 +6,7 @@ import com.mata.model.article.dto.ArticleDto;
 import com.mata.model.article.dto.ArticleUpdateDto;
 import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
+import com.mata.model.article.vo.ArticleVo;
 import com.mata.pojo.Article;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,13 +24,13 @@ public interface ArticleService extends IService<Article> {
     /**
      * 根据文章id获取文章
      */
-    Result<Article> getArticleById(Long articlesId);
+    Result<ArticleVo> getArticleById(Long articlesId);
 
 
     /**
      * 根据文章名获取文章
      */
-    Result<PageResult<ArticleDoc>> getArticleByName(String articleName,Integer page);
+    Result<PageResult<ArticleVo>> getArticleByName(String articleName,Integer page);
 
 
     /**

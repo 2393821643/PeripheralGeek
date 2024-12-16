@@ -7,6 +7,7 @@ import com.mata.model.article.dto.ArticleDto;
 import com.mata.model.article.dto.ArticleUpdateDto;
 import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
+import com.mata.model.article.vo.ArticleVo;
 import com.mata.pojo.Article;
 import com.mata.model.article.service.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,7 @@ public class ArticleController {
      * 根据文章id获取文章
      */
     @GetMapping("/{articlesId}")
-    public Result<Article> getArticleById(@PathVariable("articlesId") Long articlesId){
+    public Result<ArticleVo> getArticleById(@PathVariable("articlesId") Long articlesId){
         return articleService.getArticleById(articlesId);
     }
 
@@ -49,7 +50,7 @@ public class ArticleController {
      * 根据文章名获取文章
      */
     @GetMapping("/list")
-    public Result<PageResult<ArticleDoc>> getArticleByName(@RequestParam("articleName") String articleName,@RequestParam("page") Integer page){
+    public Result<PageResult<ArticleVo>> getArticleByName(@RequestParam("articleName") String articleName,@RequestParam("page") Integer page){
         return articleService.getArticleByName(articleName,page);
     }
 

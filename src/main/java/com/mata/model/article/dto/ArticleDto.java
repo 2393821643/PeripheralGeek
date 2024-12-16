@@ -23,4 +23,5 @@ public class ArticleDto {
 
     @NotNull(message = "商品图片不能为空")
     private MultipartFile articleImg; // 文章封面
+
 }

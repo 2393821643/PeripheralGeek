@@ -54,7 +54,7 @@ public class ArticleDocDaoImpl implements ArticleDocDao {
         // 创建请求对象
         SearchRequest searchRequest = new SearchRequest("article");
         // DSL
-        // 查看搜索商品名是不是空，空就返回推荐商品
+        // 查看搜索商品名是不是空，空就返回推荐文章
         if (StrUtil.isEmpty(articleName)){
             searchRequest.source()
                     .query(QueryBuilders.matchAllQuery());

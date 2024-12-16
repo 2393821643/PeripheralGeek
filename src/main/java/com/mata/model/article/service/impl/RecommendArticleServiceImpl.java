@@ -34,7 +34,6 @@ public class RecommendArticleServiceImpl extends ServiceImpl<RecommendArticleDao
         }catch (DataAccessException e){
             return Result.error("此文件已是推荐文章");
         }
-        save(new RecommendArticle(articleId));
         // 重建缓存
         rebuildCache();
         return Result.success("添加成功");
