@@ -1,8 +1,10 @@
 package com.mata.model.auth.controller;
 
 import com.mata.common.result.Result;
+import com.mata.model.auth.dto.ChangePasswordDto;
+import com.mata.model.auth.dto.LoginByCodeDto;
+import com.mata.model.auth.dto.LoginByPasswordDto;
 import com.mata.model.auth.service.AuthService;
-import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -39,55 +41,37 @@ public class AuthController {
     /**
      * 通过验证码登录
      *
-     * @param email 邮箱
-     * @param code  验证码
      * @return token字符串
      */
     @PostMapping("/user/login/otp")
-    public Result<String> loginByOpt(@RequestParam("email") @Email(message = "请输入正确的邮箱") @NotBlank(message = "请输入正确的邮箱") String email,
-                                     @RequestParam("code") @NotBlank(message = "请输入验证码") @Length(max = 6,message = "验证码和邮箱不对应") String code) {
-        return authService.loginByOpt(email, code);
+    public Result<String> loginByOpt(@RequestBody @Validated LoginByCodeDto loginDto) {
+        return authService.loginByOpt(loginDto.getEmail(), loginDto.getCode());
     }
 
     /**
      * 修改密码
      *
-     * @param email    邮箱
-     * @param code     验证码
-     * @param password 修改的密码
      */
     @PutMapping("/password")
-    public Result changePassword(@RequestParam("email") @Email(message = "请输入正确的邮箱") @NotBlank(message = "请输入正确的邮箱") String email,
-                                 @RequestParam("code") @NotBlank(message = "请输入验证码") String code,
-                                 @RequestParam("password") @Length(message = "密码长度要大于5，小于30", min = 5, max = 30) @NotBlank(message = "请输入密码") String password) {
-        return authService.changePasswordMessage(email, code, password);
+    public Result changePassword(@RequestBody @Validated ChangePasswordDto authDto) {
+        return authService.changePasswordMessage(authDto.getEmail(), authDto.getCode(), authDto.getPassword());
     }
 
 
     /**
      * 账号/邮箱 密码登录
-     * @param account  用户id/邮箱
-     * @param password 密码
      * @return token字符串
      */
     @PostMapping("/user/login")
-    public Result<String> loginByPassword(@RequestParam("account") @NotBlank(message = "请输入账号或邮箱") String account,
-                                          @RequestParam("password")
-                                          @Length(min = 5,max = 30,message = "密码长度大于5，小于30")
-                                          @NotBlank(message = "请输入密码") String password) {
-        return authService.loginByPassword(account, password);
+    public Result<String> loginByPassword(@RequestBody @Validated LoginByPasswordDto loginDto) {
+        return authService.loginByPassword(loginDto.getAccount(), loginDto.getPassword());
     }
 
     /**
      * 管理员登录
-     * @param id 管理员id
-     * @param password 管理员密码
      */
     @PostMapping("/admin/login")
-    public Result<String> adminLogin(@RequestParam("id") @NotBlank(message = "请输入账号或邮箱") String id,
-                                     @RequestParam("password")
-                                     @Length(min = 5,max = 30,message = "密码长度大于5，小于30")
-                                     @NotBlank(message = "请输入密码")String password) {
-        return authService.adminLogin(id,password);
+    public Result<String> adminLogin(@RequestBody @Validated LoginByPasswordDto loginDto) {
+        return authService.adminLogin(loginDto.getAccount(),loginDto.getPassword());
     }
 }

@@ -27,19 +27,6 @@ import java.util.List;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserService {
-//    @Autowired
-//    private RabbitTemplate rabbitTemplate;
-//
-//    @Autowired
-//    private StringRedisTemplate stringRedisTemplate;
-//
-//    @Autowired
-//    private RedissonClient redissonClient;
-//
-//    @Autowired
-//    @Qualifier("userBloom")
-//    private RBloomFilter<Integer> userBloom;
-
     @Autowired
     private CosClientUtil cosClientUtil;
 

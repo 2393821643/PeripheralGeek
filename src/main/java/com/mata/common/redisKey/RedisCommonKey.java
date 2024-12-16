@@ -98,4 +98,7 @@ public class RedisCommonKey {
     // 用户文章缓存锁时间
     public final static long ARTICLE_USER_LOCK_TIME = 5;
 
+    // 推荐文章列表键
+    public final static String RECOMMEND_ARTICLE_LIST_KEY = "article:recommend:list";
+
 }

@@ -1,5 +1,7 @@
 package com.mata;
 
+import com.mata.model.article.dao.RecommendArticleDao;
+import com.mata.model.article.vo.RecommendArticleVo;
 import com.mata.model.auth.dao.AuthDao;
 import com.mata.utils.AlipayUtil;
 import com.mata.common.redisKey.RedisCommonKey;
@@ -15,6 +17,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.ListOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.math.BigDecimal;
@@ -27,10 +31,6 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest
 @Slf4j
 class PeripheralGeekApplicationTests {
-    @Autowired
-    @Qualifier("userBloom")
-    private RBloomFilter<Integer> userBloom;
-
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
@@ -87,9 +87,6 @@ class PeripheralGeekApplicationTests {
         System.out.println(goodId);
     }
 
-    @Autowired
-    @Qualifier("articleBloom")
-    RBloomFilter<Long> articleFilter;
     @Test
     void testLock() throws InterruptedException {
         //boolean add = articleFilter.add(1831695980921217024L);
@@ -139,6 +136,19 @@ class PeripheralGeekApplicationTests {
         Collections.addAll(list,authDao.getRoleName(Integer.valueOf(loginId.toString())));
         System.out.println(list);
         return list;
+    }
+
+    @Autowired
+    private RecommendArticleDao recommendArticleDao;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Test
+    void testRa(){
+        ListOperations<String, RecommendArticleVo> listOperations = redisTemplate.opsForList();
+        List<RecommendArticleVo> range = listOperations.range(RedisCommonKey.RECOMMEND_ARTICLE_LIST_KEY, 0, -1);
+        System.out.println(range.isEmpty());
     }
 
 }
