@@ -5,7 +5,7 @@
 
     <select id="getArticleById" resultType="com.mata.model.article.vo.ArticleVo"
             parameterType="java.lang.Long">
-        SELECT a.article_id, a.article_title, a.article_context_url, a.article_img_url,a.user_id,u.head_url,u.username
+        SELECT a.article_id, a.article_title, a.article_context_url, a.article_img_url,a.user_id,a.brief_introduction,u.head_url,u.username
         FROM tb_article a JOIN tb_user u
                                ON u.user_id = a.user_id
         WHERE a.article_id = #{articleId}

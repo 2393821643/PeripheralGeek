@@ -26,7 +26,10 @@ public class ArticleDoc {
 
     private Integer userId; // 文章作者id
 
+    private String briefIntroduction; // 文章简介
+
     private List<String> suggestion; // 商品提示词
+
 
 
     public ArticleDoc(Article article) {
@@ -35,6 +38,7 @@ public class ArticleDoc {
         this.articleContextUrl = article.getArticleContextUrl();
         this.articleImgUrl = article.getArticleImgUrl();
         this.userId = article.getUserId();
+        this.briefIntroduction = article.getBriefIntroduction();
         this.articleState = article.getArticleState();
         List<String> suggestionList = new ArrayList<>();
         Collections.addAll(suggestionList,this.articleTitle);

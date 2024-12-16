@@ -120,6 +120,9 @@ PUT /article
       "articleContextUrl":{
       	"type":"keyword"
       },
+      "briefIntroduction":{
+        "type":"keyword"
+      },
       "all":{
         "type": "text",
         "analyzer": "text_anlyzer",

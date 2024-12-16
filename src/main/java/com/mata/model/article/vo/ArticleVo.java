@@ -24,5 +24,7 @@ public class ArticleVo {
 
     private String username; // 作者用户名
 
+    private String briefIntroduction; // 文章简介
+
     private String headUrl; // 作者头像url
 }

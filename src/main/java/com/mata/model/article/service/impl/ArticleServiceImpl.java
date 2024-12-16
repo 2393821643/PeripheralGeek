@@ -22,6 +22,7 @@ import com.mata.model.article.service.ArticleService;
 import com.mata.pojo.User;
 import com.mata.utils.CosClientUtil;
 import com.mata.common.redisKey.RedisCommonKey;
+import com.mata.utils.HtmlUtil;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -86,14 +87,20 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
                 throw new RuntimeException(e);
             }
         });
+        // 获取前50字内容(简介)
+        CompletableFuture<String> getBriefIntroduction = CompletableFuture.supplyAsync(() -> {
+            return HtmlUtil.getParagraphsUntil50Chars(articleDto.getContext());
+        });
         String articleImgUrl = writeImg.join(); // 回调返回url
         String articleContextUrl = writeIntroduction.join(); // 回调返回url
+        String briefIntroduction = getBriefIntroduction.join(); // 获取简介
         // 拼装原生article对象
         Article article = Article.builder()
                 .articleId(articleId)
                 .articleTitle(articleDto.getTitle())
                 .articleContextUrl(articleContextUrl)
                 .articleImgUrl(articleImgUrl)
+                .briefIntroduction(briefIntroduction)
                 .createTime(LocalDateTime.now())
                 .userId(StpUtil.getLoginIdAsInt())
                 .articleState("已审核")
@@ -160,16 +167,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     public Result<PageResult<ArticleVo>> getArticleByName(String articleName,Integer page) {
         PageResult<ArticleDoc> resultPage = articleDocDao.getArticleByName(articleName, page);
         // 返回的pageResult
-        PageResult<ArticleVo> articleVoPageResult = new PageResult<>();
+        PageResult<ArticleVo> articleVoPageResult = new PageResult<>(0,new ArrayList<>());
         articleVoPageResult.setTotal(resultPage.getTotal());
-        ArrayList<ArticleVo> articleVoList = new ArrayList<>();
         // 将resultPage中的ArticleDoc转为ArticleVo(将user的信息注入)
         List<ArticleDoc> articleDocList = resultPage.getRecords();
         List<Integer> userIdList = new ArrayList<>();
         for (ArticleDoc articleDoc:articleDocList){
             userIdList.add(articleDoc.getUserId());
         }
-        // 批量查询
+        // 批量查询 如果userIdList为空直接返回空
+        if (userIdList.isEmpty()){
+           return Result.success(articleVoPageResult);
+        }
         List<User> users = userDao.selectBatchIds(userIdList);
         // 组装user信息
         for (ArticleDoc articleDoc : articleDocList){
@@ -178,11 +187,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
                     ArticleVo articleVo = BeanUtil.copyProperties(articleDoc, ArticleVo.class);
                     articleVo.setUsername(user.getUsername());
                     articleVo.setHeadUrl(user.getHeadUrl());
-                    articleVoList.add(articleVo);
+                    articleVoPageResult.getRecords().add(articleVo);
                 }
             }
         }
-        articleVoPageResult.setRecords(articleVoList);
         return Result.success(articleVoPageResult);
     }
 
@@ -221,7 +229,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     @Override
     public Result updateArticle(ArticleUpdateDto articleUpdateDto) {
         Long articleId = articleUpdateDto.getArticleId();
-        String articleContextUrl = null;
         // 检查文章是否存在
         boolean exist = checkArticleIsUserHave(articleId, StpUtil.getLoginIdAsInt());
         if (!exist){
@@ -230,15 +237,25 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         // 查找源文章信息
         Article article = getById(articleId);
         // 更新文章
-        try {
-            byte[] introductionBytes = articleUpdateDto.getContext().getBytes();
-            articleContextUrl =  writeToCos(introductionBytes, IdUtil.getSnowflakeNextIdStr() + ".html", CosFileMkdir.ArticleHtmlImg);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        // 发送内容到cos
+        CompletableFuture<String> writeIntroduction = CompletableFuture.supplyAsync(() -> {
+            try {
+                byte[] introductionBytes = articleUpdateDto.getContext().getBytes();
+                return writeToCos(introductionBytes, IdUtil.getSnowflakeNextIdStr() + ".html", CosFileMkdir.ArticleHtmlImg);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        // 获取前50字内容(简介)
+        CompletableFuture<String> getBriefIntroduction = CompletableFuture.supplyAsync(() -> {
+            return HtmlUtil.getParagraphsUntil50Chars(articleUpdateDto.getContext());
+        });
+        String articleContextUrl = writeIntroduction.join();
+        String briefIntroduction = getBriefIntroduction.join();
         // 重新构建文章对象
         article.setArticleTitle(articleUpdateDto.getTitle());
         article.setArticleContextUrl(articleContextUrl);
+        article.setBriefIntroduction(briefIntroduction);
         // 修改
         articleDocDao.updateArticle(new ArticleDoc(article));
         updateById(article);

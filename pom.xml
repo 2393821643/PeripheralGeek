@@ -113,7 +113,12 @@
             <artifactId>sa-token-jwt</artifactId>
             <version>1.39.0</version>
         </dependency>
-
+<!--        jsoup-->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.18.3</version>
+        </dependency>
     </dependencies>
 
     <build>

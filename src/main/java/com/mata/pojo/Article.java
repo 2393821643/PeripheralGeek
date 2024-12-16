@@ -33,6 +33,9 @@ public class Article {
     @TableField("user_id")
     private Integer userId; // 文章作者id
 
+    @TableField("brief_introduction")
+    private String briefIntroduction; // 文章简介
+
     @TableField("create_time")
     private LocalDateTime createTime;
 }
