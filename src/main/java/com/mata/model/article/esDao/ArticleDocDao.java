@@ -3,6 +3,8 @@ package com.mata.model.article.esDao;
 import com.mata.model.article.esDoc.ArticleDoc;
 import com.mata.common.result.PageResult;
 
+import java.util.List;
+
 public interface ArticleDocDao {
     /**
      * 添加文章
@@ -24,4 +26,9 @@ public interface ArticleDocDao {
      * 修改文章信息
      */
     void updateArticle(ArticleDoc articleDoc);
+
+    /**
+     * 获取文章推荐词
+     */
+    List<String> getSuggestions(String articleName);
 }

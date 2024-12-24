@@ -19,7 +19,7 @@ public class ArticleUpdateDto {
     @NotEmpty(message = "文章内容不能为空")
     private String context; // 文章内容
 
-    @NotEmpty(message = "标题长度要大于0，小于50")
-    @Length(min = 1,max = 50,message = "标题长度要大于0，小于50")
+    @NotEmpty(message = "标题长度要大于8，小于50")
+    @Length(min = 1,max = 50,message = "标题长度要大于8，小于50")
     private String title; // 文章标题
 }

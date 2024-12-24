@@ -11,6 +11,7 @@ import com.mata.model.user.dao.UserDao;
 import com.mata.model.user.dto.ReceiptInformationDto;
 import com.mata.common.result.Result;
 import com.mata.common.enumPackage.CosFileMkdir;
+import com.mata.model.user.dto.UserUpdateDto;
 import com.mata.pojo.ReceiptInformation;
 import com.mata.pojo.User;
 import com.mata.model.user.service.UserService;
@@ -60,11 +61,13 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
      * 修改用户信息
      */
     @Override
-    public Result updateUserInformationMessage(User user) {
+    public Result updateUserInformationMessage(UserUpdateDto userUpdateDto) {
+        User user = BeanUtil.copyProperties(userUpdateDto, User.class);
         // 注入userId
         int userId = StpUtil.getLoginIdAsInt();
         user.setUserId(userId);
         // 修改个人信息
+        updateById(user);
         return Result.success("修改成功");
     }
 

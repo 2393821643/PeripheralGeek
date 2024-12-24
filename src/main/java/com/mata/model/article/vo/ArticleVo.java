@@ -1,5 +1,7 @@
 package com.mata.model.article.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.*;
 
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.List;
 @ToString
 @Builder
 public class ArticleVo {
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long articleId; // 文章id
 
     private String articleTitle; // 文章标题

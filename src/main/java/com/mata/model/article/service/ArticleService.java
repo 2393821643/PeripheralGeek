@@ -1,6 +1,8 @@
 package com.mata.model.article.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.mata.common.result.Suggest;
+import com.mata.model.article.dto.ArticleSearchDto;
 import com.mata.model.article.esDoc.ArticleDoc;
 import com.mata.model.article.dto.ArticleDto;
 import com.mata.model.article.dto.ArticleUpdateDto;
@@ -9,6 +11,8 @@ import com.mata.common.result.Result;
 import com.mata.model.article.vo.ArticleVo;
 import com.mata.pojo.Article;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 public interface ArticleService extends IService<Article> {
     /**
@@ -19,7 +23,7 @@ public interface ArticleService extends IService<Article> {
     /**
      * 根据用户id 获取文章列表
      */
-    Result<PageResult<Article>> getArticleByUserId(Integer userId,Integer page);
+    Result<PageResult<Article>> getArticleByUserId(ArticleSearchDto articleSearchDto);
 
     /**
      * 根据文章id获取文章
@@ -48,4 +52,8 @@ public interface ArticleService extends IService<Article> {
      */
     Result updateArticleImg(Long articleId, MultipartFile img);
 
+    /**
+     * 获取文章推荐词
+     */
+    Result<List<Suggest>> getSuggest(String articleName);
 }

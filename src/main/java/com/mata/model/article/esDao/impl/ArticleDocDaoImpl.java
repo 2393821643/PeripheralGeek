@@ -15,6 +15,10 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.suggest.Suggest;
+import org.elasticsearch.search.suggest.SuggestBuilder;
+import org.elasticsearch.search.suggest.SuggestBuilders;
+import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -118,5 +122,48 @@ public class ArticleDocDaoImpl implements ArticleDocDao {
     public void updateArticle(ArticleDoc articleDoc) {
         deleteArticle(articleDoc.getArticleId().toString());
         addArticle(articleDoc);
+    }
+
+
+    /**
+     * 解析suggestions
+     * @param response
+     */
+    private List<String> handleSuggestsResponse(SearchResponse response){
+        List<String> suggestionList = new ArrayList<>();
+        Suggest suggest = response.getSuggest();
+        CompletionSuggestion suggestion = suggest.getSuggestion("goods_suggestions");
+        //遍历获取的suggest
+        for (CompletionSuggestion.Entry.Option option : suggestion.getOptions()) {
+            String suggestionItem = option.getText().string();
+            suggestionList.add(suggestionItem);
+        }
+        return suggestionList;
+    }
+
+
+    /**
+     * 返回商品推荐词
+     */
+    @Override
+    public List<String> getSuggestions(String articleName) {
+        //准备请求
+        SearchRequest request = new SearchRequest("article");
+        //DSL
+        request.source()
+                .suggest(new SuggestBuilder()
+                        .addSuggestion("goods_suggestions", //这个是推荐suggest的名称 可自定义 比如define_suggest
+                                SuggestBuilders.completionSuggestion("suggestion") // 这个是推荐字段的名称 在创建索引库的时候type为completion的字段名称
+                                        .prefix(articleName)
+                                        .skipDuplicates(true)
+                                        .size(10)));
+        // 发送请求
+        SearchResponse response = null;
+        try {
+            response = client.search(request, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return handleSuggestsResponse(response);
     }
 }

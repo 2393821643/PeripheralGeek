@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.mata.model.user.dto.ReceiptInformationDto;
 import com.mata.common.result.Result;
+import com.mata.model.user.dto.UserUpdateDto;
 import com.mata.pojo.ReceiptInformation;
 import com.mata.pojo.User;
 import com.mata.model.user.service.UserService;
@@ -32,12 +33,21 @@ public class UserController {
     }
 
     /**
+     * 根据userId获取用户信息
+     */
+    @GetMapping("/information/other")
+    public Result<User> getUserInformation(@RequestParam("userId") Integer userId){
+        return userService.getUserInformationById(userId);
+    }
+
+
+    /**
      * 修改用户个人信息
      *
      */
     @PutMapping("/information")
     @SaCheckLogin
-    public Result updateUserInformationMessage(@RequestBody @Validated User user){
+    public Result updateUserInformationMessage(@RequestBody @Validated UserUpdateDto user){
         return userService.updateUserInformationMessage(user);
     }
 

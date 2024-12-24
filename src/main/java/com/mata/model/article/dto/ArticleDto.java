@@ -13,8 +13,8 @@ import javax.validation.constraints.NotNull;
 @Builder
 @ToString
 public class ArticleDto {
-    @NotEmpty(message = "标题长度要大于0，小于50")
-    @Length(min = 1,max = 50,message = "标题长度要大于0，小于50")
+    @NotEmpty(message = "标题长度要大于8，小于50")
+    @Length(min = 8,max = 50,message = "标题长度要大于0，小于50")
     private String title; // 文章标题
 
     @NotNull(message = "文章内容不能为空")

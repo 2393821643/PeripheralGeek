@@ -8,5 +8,8 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface ArticleDao extends BaseMapper<Article> {
+    /**
+     * 根据文章id获取文章
+     */
     ArticleVo getArticleById(@Param("articleId") Long articleId);
 }

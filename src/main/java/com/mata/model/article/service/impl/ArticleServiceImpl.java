@@ -3,10 +3,14 @@ package com.mata.model.article.service.impl;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.mata.common.result.Suggest;
+import com.mata.model.article.dto.ArticleSearchDto;
 import com.mata.model.article.esDoc.ArticleDoc;
 import com.mata.model.article.dao.ArticleDao;
 import com.mata.model.article.esDao.ArticleDocDao;
@@ -140,13 +144,21 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
      * 根据用户id 获取文章列表
      */
     @Override
-    public Result<PageResult<Article>> getArticleByUserId(Integer userId, Integer page) {
-        Page<Article> articlePage = lambdaQuery()
-                .select(Article::getArticleId, Article::getArticleTitle, Article::getArticleImgUrl, Article::getArticleContextUrl)
-                .eq(Article::getUserId, userId)
+    public Result<PageResult<Article>> getArticleByUserId(ArticleSearchDto articleSearchDto) {
+        LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(Article::getArticleId, Article::getArticleTitle, Article::getArticleImgUrl, Article::getArticleContextUrl,Article::getBriefIntroduction)
+                .eq(Article::getUserId, articleSearchDto.getUserId())
                 .eq(Article::getArticleState, "已审核")
-                .orderByDesc(Article::getCreateTime)
-                .page(new Page<>(page, 20));
+                .orderByDesc(Article::getCreateTime);
+
+        // 如果没有标题，就不模糊查询
+        if (!StrUtil.isEmpty(articleSearchDto.getTitle())){
+            wrapper.likeRight(Article::getArticleTitle,articleSearchDto.getTitle());
+        }
+        // 配置页
+        Page<Article> articlePage = new Page(articleSearchDto.getPage(), 20);
+        // 查询
+        articlePage = page(articlePage, wrapper);
         PageResult<Article> resultPage = new PageResult<>(articlePage.getTotal(), articlePage.getRecords());
         return Result.success(resultPage);
     }
@@ -283,6 +295,17 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         article.setArticleImgUrl(articleImgUrl);
         updateById(article);
         return Result.success("修改成功");
+    }
+
+    /**
+     * 获取文章推荐词
+     */
+    @Override
+    public Result<List<Suggest>> getSuggest(String articleName) {
+        List<String> suggestionStr = articleDocDao.getSuggestions(articleName);
+        List<Suggest> suggestions = new ArrayList<>();
+        suggestionStr.forEach(suggest->suggestions.add(new Suggest(suggest)));
+        return Result.success(suggestions);
     }
 
 

@@ -3,6 +3,7 @@ package com.mata.model.user.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.mata.model.user.dto.ReceiptInformationDto;
 import com.mata.common.result.Result;
+import com.mata.model.user.dto.UserUpdateDto;
 import com.mata.pojo.ReceiptInformation;
 import com.mata.pojo.User;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,7 +24,7 @@ public interface UserService extends IService<User> {
     /**
      * 修改用户信息 发送消息队列
      */
-    Result updateUserInformationMessage(User user);
+    Result updateUserInformationMessage(UserUpdateDto user);
 
 
     /**

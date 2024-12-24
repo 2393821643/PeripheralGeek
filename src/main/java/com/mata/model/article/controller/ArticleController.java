@@ -2,6 +2,8 @@ package com.mata.model.article.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
+import com.mata.common.result.Suggest;
+import com.mata.model.article.dto.ArticleSearchDto;
 import com.mata.model.article.esDoc.ArticleDoc;
 import com.mata.model.article.dto.ArticleDto;
 import com.mata.model.article.dto.ArticleUpdateDto;
@@ -14,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/article")
@@ -33,9 +37,9 @@ public class ArticleController {
     /**
      * 根据用户id 获取文章列表
      */
-    @GetMapping("/list/userId")
-    public Result<PageResult<Article>> getArticleByUserId(@RequestParam("userId") Integer userId, @RequestParam("page") Integer page){
-        return articleService.getArticleByUserId(userId,page);
+    @PostMapping("/list/userId")
+    public Result<PageResult<Article>> getArticleByUserId(@RequestBody ArticleSearchDto articleSearchDto){
+        return articleService.getArticleByUserId(articleSearchDto);
     }
 
     /**
@@ -82,6 +86,13 @@ public class ArticleController {
         return articleService.updateArticleImg(articleId,img);
     }
 
+    /**
+     * 获取文章推荐词
+     */
+    @GetMapping("/suggest/{articleName}")
+    public Result<List<Suggest>> getSuggest(@PathVariable("articleName") String articleName){
+        return articleService.getSuggest(articleName);
+    }
 
 
 }

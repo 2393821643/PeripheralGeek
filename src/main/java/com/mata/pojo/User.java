@@ -20,7 +20,6 @@ public class User {
     private Integer userId; // 用户id
 
     @TableField("username")
-    @Length(min = 1,max = 30,message = "用户名不能为空或者大于30")
     private String username;
 
     @TableField("password")
@@ -29,7 +28,6 @@ public class User {
     @TableField("email")
     private String email; // 邮箱
 
-    @Length(min = 0,max = 1,message = "请输入正确的性别")
     @TableField("sex")
     private String sex; // 性别
 
@@ -37,7 +35,6 @@ public class User {
     private String headUrl; // 头像地址
 
     @TableField("sign")
-    @Length(min = 0,max = 30,message = "签名长度不能超过30")
     private String sign; // 用户个性签名
 
     @TableField("role_id")
