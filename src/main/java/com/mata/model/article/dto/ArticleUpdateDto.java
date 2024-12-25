@@ -20,6 +20,6 @@ public class ArticleUpdateDto {
     private String context; // 文章内容
 
     @NotEmpty(message = "标题长度要大于8，小于50")
-    @Length(min = 1,max = 50,message = "标题长度要大于8，小于50")
-    private String title; // 文章标题
+    @Length(min = 8,max = 50,message = "标题长度要大于8，小于50")
+    private String articleTitle; // 文章标题
 }

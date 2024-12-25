@@ -101,7 +101,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         // 拼装原生article对象
         Article article = Article.builder()
                 .articleId(articleId)
-                .articleTitle(articleDto.getTitle())
+                .articleTitle(articleDto.getArticleTitle())
                 .articleContextUrl(articleContextUrl)
                 .articleImgUrl(articleImgUrl)
                 .briefIntroduction(briefIntroduction)
@@ -265,7 +265,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         String articleContextUrl = writeIntroduction.join();
         String briefIntroduction = getBriefIntroduction.join();
         // 重新构建文章对象
-        article.setArticleTitle(articleUpdateDto.getTitle());
+        article.setArticleTitle(articleUpdateDto.getArticleTitle());
         article.setArticleContextUrl(articleContextUrl);
         article.setBriefIntroduction(briefIntroduction);
         // 修改

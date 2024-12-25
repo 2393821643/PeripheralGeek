@@ -23,7 +23,7 @@ public class ReceiptInformationDto {
     private String address;
 
     // 收件人姓名
-    @NotEmpty(message = "收件不能为空")
-    @Length(min = 1,max = 20,message = "地址长度大于0，小于20")
+    @NotEmpty(message = "收件人不能为空")
+    @Length(min = 1,max = 20,message = "收件人名字大于0，小于20")
     private String recipient;
 }
