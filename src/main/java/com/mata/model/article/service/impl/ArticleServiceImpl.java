@@ -169,7 +169,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     @Override
     public Result<ArticleVo> getArticleById(Long articlesId) {
         ArticleVo articleVo = baseMapper.getArticleById(articlesId);
-        System.out.println(articleVo);
         return Result.success(articleVo);
     }
 

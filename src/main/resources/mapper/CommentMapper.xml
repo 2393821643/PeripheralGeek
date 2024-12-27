@@ -15,5 +15,7 @@
         FROM tb_comment c LEFT JOIN tb_user u
                                     ON u.user_id = c.user_id
         WHERE target_id = #{targetId}
+        ORDER BY c.create_time
+
     </select>
 </mapper>

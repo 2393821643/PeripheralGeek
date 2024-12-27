@@ -42,14 +42,14 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
      * 评论商品/文章/某个评论
      */
     @Override
-    public Result comment(CommentDto commentDto) {
+    public Result<String> comment(CommentDto commentDto) {
         Comment comment = BeanUtil.copyProperties(commentDto, Comment.class);
         comment.setUserId(StpUtil.getLoginIdAsInt());
         comment.setCreateTime(LocalDateTime.now());
         comment.setCommentId(IdUtil.getSnowflakeNextId());
         comment.setGoodCount(0);
         save(comment);
-        return Result.success("评论成功");
+        return Result.success(comment.getCommentId().toString(),"评论成功");
     }
 
     /**

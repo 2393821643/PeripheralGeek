@@ -11,7 +11,7 @@ public interface CommentService extends IService<Comment> {
     /**
      * 评论商品/文章/某个评论
      */
-    Result comment(CommentDto commentDto);
+    Result<String> comment(CommentDto commentDto);
 
     /**
      * 获取评论 根据从属id

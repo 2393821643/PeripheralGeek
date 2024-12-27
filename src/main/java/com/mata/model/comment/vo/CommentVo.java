@@ -1,5 +1,8 @@
 package com.mata.model.comment.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -10,6 +13,7 @@ import java.time.LocalDateTime;
 @ToString
 @Builder
 public class CommentVo {
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long commentId; // 评论id
 
     private Long targetId; //从属id
@@ -26,5 +30,6 @@ public class CommentVo {
 
     private Boolean isGood; // 是否被点赞
 
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private LocalDateTime createTime; // 评论时间
 }

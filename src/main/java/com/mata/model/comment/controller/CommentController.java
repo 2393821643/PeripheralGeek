@@ -22,11 +22,12 @@ public class CommentController {
 
     /**
      * 评论商品/文章/某个评论
+     * @return 评论id
      */
     @PostMapping
     @SaCheckLogin
     @SaCheckRole("user")
-    public Result comment(@RequestBody @Validated CommentDto commentDto){
+    public Result<String> comment(@RequestBody @Validated CommentDto commentDto){
         return commentService.comment(commentDto);
     }
 
@@ -62,7 +63,7 @@ public class CommentController {
     /**
      * 删除评论
      */
-    @DeleteMapping
+    @DeleteMapping("/{commentId}")
     @SaCheckLogin
     public Result deleteComment(@PathVariable("commentId") Long commentId){
         return commentService.deleteComment(commentId);
