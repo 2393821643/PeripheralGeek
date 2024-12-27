@@ -146,7 +146,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     @Override
     public Result<PageResult<Article>> getArticleByUserId(ArticleSearchDto articleSearchDto) {
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(Article::getArticleId, Article::getArticleTitle, Article::getArticleImgUrl, Article::getArticleContextUrl,Article::getBriefIntroduction)
+        wrapper.select(Article::getArticleId, Article::getArticleTitle, Article::getArticleImgUrl, Article::getArticleContextUrl,Article::getBriefIntroduction,Article::getCreateTime)
                 .eq(Article::getUserId, articleSearchDto.getUserId())
                 .eq(Article::getArticleState, "已审核")
                 .orderByDesc(Article::getCreateTime);
@@ -168,8 +168,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
      */
     @Override
     public Result<ArticleVo> getArticleById(Long articlesId) {
-        ArticleVo articleById = baseMapper.getArticleById(articlesId);
-        return Result.success(articleById);
+        ArticleVo articleVo = baseMapper.getArticleById(articlesId);
+        System.out.println(articleVo);
+        return Result.success(articleVo);
     }
 
     /**
@@ -277,7 +278,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
      * 修改文章图片 通过文章Id
      */
     @Override
-    public Result updateArticleImg(Long articleId, MultipartFile img) {
+    public Result<String> updateArticleImg(Long articleId, MultipartFile img) {
         String articleImgUrl = null;
         // 检查文章是否存在
         boolean exist = checkArticleIsUserHave(articleId, StpUtil.getLoginIdAsInt());
@@ -294,7 +295,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         }
         article.setArticleImgUrl(articleImgUrl);
         updateById(article);
-        return Result.success("修改成功");
+        return Result.success(articleImgUrl,"修改成功");
     }
 
     /**

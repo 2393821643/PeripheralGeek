@@ -1,9 +1,11 @@
 package com.mata.model.article.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -30,4 +32,7 @@ public class ArticleVo {
     private String briefIntroduction; // 文章简介
 
     private String headUrl; // 作者头像url
+
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    private LocalDateTime createTime; // 创建时间
 }

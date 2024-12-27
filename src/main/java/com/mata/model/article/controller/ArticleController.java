@@ -82,7 +82,7 @@ public class ArticleController {
      */
     @PutMapping("/user/img")
     @SaCheckLogin
-    public Result updateArticleImg(@RequestParam("articleId")Long articleId, @RequestParam("articleImg")MultipartFile img){
+    public Result<String> updateArticleImg(@RequestParam("articleId")Long articleId, @RequestParam("articleImg")MultipartFile img){
         return articleService.updateArticleImg(articleId,img);
     }
 

@@ -1,14 +1,24 @@
 package com.mata;
 
+import cn.hutool.json.JSONUtil;
+import com.mata.model.article.dao.ArticleDao;
 import com.mata.model.article.dao.RecommendArticleDao;
+import com.mata.model.article.esDao.ArticleDocDao;
+import com.mata.model.article.esDoc.ArticleDoc;
 import com.mata.model.article.vo.RecommendArticleVo;
 import com.mata.model.auth.dao.AuthDao;
 import com.mata.model.user.dao.UserDao;
+import com.mata.pojo.Article;
 import com.mata.pojo.User;
 import com.mata.utils.AlipayUtil;
 import com.mata.common.redisKey.RedisCommonKey;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.recycler.Recycler;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -28,6 +38,7 @@ import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -198,5 +209,41 @@ class PeripheralGeekApplicationTests {
     void testTime(){
         System.out.println(LocalDateTime.now().toString());
     }
+
+    @Autowired
+    private ArticleDao articleDao;
+
+    @Autowired
+    private ArticleDocDao articleDocDao;
+    // 删除所有文档
+    @Test
+    void deleteAllDoc(){
+        List<Article> articles = articleDao.selectList(null);
+        for (Article article :articles){
+            articleDocDao.deleteArticle(article.getArticleId().toString());
+        }
+    }
+
+
+    @Autowired
+    private RestHighLevelClient client;
+    // 批量导入文档
+    @Test
+    void addDoc() throws IOException {
+        List<Article> articles = articleDao.selectList(null);
+        //1:创建request
+        BulkRequest request = new BulkRequest();
+        //2:准备参数 添加多个新增的request
+        for(Article article:articles){
+            ArticleDoc articleDoc = new ArticleDoc(article);
+            request.add(new IndexRequest("article")
+                    .id(articleDoc.getArticleId().toString())
+                    .source(JSONUtil.toJsonStr(articleDoc), XContentType.JSON));
+        }
+        //3:发送请求
+        client.bulk(request, RequestOptions.DEFAULT);
+    }
+
+
 
 }

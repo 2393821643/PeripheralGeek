@@ -123,6 +123,9 @@ PUT /article
       "briefIntroduction":{
         "type":"keyword"
       },
+      "createTime":{
+        "type" : "long"
+       }
       "all":{
         "type": "text",
         "analyzer": "text_anlyzer",

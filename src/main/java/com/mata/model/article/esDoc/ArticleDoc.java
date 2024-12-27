@@ -1,9 +1,11 @@
 package com.mata.model.article.esDoc;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.mata.pojo.Article;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +32,9 @@ public class ArticleDoc {
 
     private List<String> suggestion; // 商品提示词
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime createTime; // 创建时间
+
 
 
     public ArticleDoc(Article article) {
@@ -40,6 +45,7 @@ public class ArticleDoc {
         this.userId = article.getUserId();
         this.briefIntroduction = article.getBriefIntroduction();
         this.articleState = article.getArticleState();
+        this.createTime = article.getCreateTime();
         List<String> suggestionList = new ArrayList<>();
         Collections.addAll(suggestionList,this.articleTitle);
         this.suggestion = suggestionList;

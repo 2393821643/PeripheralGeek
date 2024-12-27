@@ -50,7 +50,7 @@ public interface ArticleService extends IService<Article> {
     /**
      * 修改文章图片 通过文章Id
      */
-    Result updateArticleImg(Long articleId, MultipartFile img);
+    Result<String> updateArticleImg(Long articleId, MultipartFile img);
 
     /**
      * 获取文章推荐词

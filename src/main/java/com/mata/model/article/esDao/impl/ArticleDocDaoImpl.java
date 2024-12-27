@@ -15,6 +15,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
@@ -67,6 +68,7 @@ public class ArticleDocDaoImpl implements ArticleDocDao {
                     .query(QueryBuilders.matchQuery("all",articleName));
         }
         // 分页 一次20个结果
+        searchRequest.source().sort("createTime", SortOrder.DESC);
         searchRequest.source()
                 .from((page - 1) * 20)
                 .size(20);
@@ -84,7 +86,7 @@ public class ArticleDocDaoImpl implements ArticleDocDao {
      * 封装解析搜索
      */
     private PageResult<ArticleDoc> handleResponse(SearchResponse response){
-        List<ArticleDoc> goodsList = new ArrayList<>();
+        List<ArticleDoc> articleList = new ArrayList<>();
         //解析操作
         SearchHits searchHits = response.getHits();
         //查询总条数
@@ -95,9 +97,9 @@ public class ArticleDocDaoImpl implements ArticleDocDao {
             //4.3获得source
             String articleDocJson = hit.getSourceAsString();
             ArticleDoc articleDoc = JSONUtil.toBean(articleDocJson, ArticleDoc.class);
-            goodsList.add(articleDoc);
+            articleList.add(articleDoc);
         }
-        return new PageResult<>(total,goodsList);
+        return new PageResult<>(total,articleList);
     }
 
     /**
