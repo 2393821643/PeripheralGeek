@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 
 public interface OrderService extends IService<Order> {
     /**
-     *  购买商品，返回支付html
+     *  返回支付订单号
      */
     Result<String> buyGoods(Long goodsId, BuyMessageDto buyMessageDto);
 
@@ -36,7 +36,7 @@ public interface OrderService extends IService<Order> {
     void payNotice(HttpServletRequest httpServletRequest);
 
     /**
-     * 继续支付
+     * 继续支付 生成支付订单html
      */
     Result<String> continuePay(Long outTradeNo);
 

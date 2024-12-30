@@ -1,6 +1,7 @@
 package com.mata.model.goods.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.mata.common.result.Suggest;
 import com.mata.model.goods.dto.GoodsAddDto;
 import com.mata.model.goods.dto.GoodsUpdateDto;
 import com.mata.common.result.PageResult;
@@ -49,7 +50,7 @@ public interface GoodsService extends IService<Goods> {
     /**
      * 返回商品推荐词
      */
-    Result<List<String>> getSuggestions(String goodsName);
+    Result<List<Suggest>> getSuggestions(String goodsName);
 
     /**
      * 搜索商品

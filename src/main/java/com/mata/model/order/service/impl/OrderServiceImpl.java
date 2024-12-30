@@ -59,10 +59,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
     private RedissonClient redissonClient;
 
     @Autowired
-    @Qualifier("goodsBloom")
-    private RBloomFilter<Long> goodsBloomFilter;
-
-    @Autowired
     private AlipayUtil alipayUtil;
 
     @Autowired
@@ -77,7 +73,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
 
 
     /**
-     * 购买商品，返回支付html
+     * 购买商品，返回支付订单号
      */
     @Override
     public Result<String> buyGoods(Long goodsId, BuyMessageDto buyMessageDto) {
@@ -92,13 +88,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
         String goodsName = goods.getGoodsName();
         // 计算商品数量
         double goodsTotalPrice = goods.getGoodsPrice() * buyMessageDto.getCount();
-        // 开始支付
+        // 生成订单
         // 订单id
         String outTradeNo = IdUtil.getSnowflakeNextIdStr();
         // 加入订单bloom
         orderBloomFilter.add(Long.valueOf(outTradeNo));
-        // 返回订单html
-        String orderHtml = alipayUtil.createOrder(outTradeNo, BigDecimal.valueOf(goodsTotalPrice), goodsName);
         // 异步发送创建订单记录
         Order order = Order.builder()
                 .outTradeNo(Long.valueOf(outTradeNo))
@@ -118,14 +112,24 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
         rabbitTemplate.convertAndSend("OrderExchange", "createOrderKey", JSONUtil.toJsonStr(order));
         // 减少缓存商品数量
         decreaseCacheGoodsCount(buyMessageDto.getCount(), goodsId);
-        // 发送消息队列，修改数据库商品数量，延迟队列
-        Message message = MessageBuilder
-                .withBody(goodsId.toString().getBytes(StandardCharsets.UTF_8)) //设置消息内容
-                .setHeader("x-delay", 500000) // 设置消息延迟时间 5分钟
-                .build();
-        rabbitTemplate.convertAndSend("UpdateCountExchange", "updateCountKey", message);
-        // 发布消息队列
-        return Result.success(orderHtml, null);
+        System.out.println("1");
+        // 获取发送消息队列锁 没获取到就不发送消息队列 获取到加锁5分钟
+        RLock lock = redissonClient.getLock(RedisCommonKey.UPDATE_GOODS_COUNT_PRE_KEY+goodsId);
+        boolean isLock = false;
+        try {
+            isLock = lock.tryLock(0, RedisCommonKey.UPDATE_GOODS_COUNT_TIME, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        if (isLock){
+            // 发送消息队列，修改数据库商品数量，延迟队列
+            Message message = MessageBuilder
+                    .withBody(goodsId.toString().getBytes(StandardCharsets.UTF_8)) //设置消息内容
+                    .setHeader("x-delay", 500000) // 设置消息延迟时间 5分钟
+                    .build();
+            rabbitTemplate.convertAndSend("UpdateCountExchange", "updateCountKey", message);
+        }
+        return Result.success(outTradeNo, null);
     }
 
     /**
@@ -133,12 +137,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
      */
     private Integer findGoodsCount(Long goodsId) {
         Integer count = 0;
-        // 先查找商品是否存在
-        boolean isExist = goodsBloomFilter.contains(goodsId);
-        if (!isExist) {
-            return 0;
-        }
-
         // Redis查看商品数量
         RReadWriteLock readWriteLock = redissonClient.getReadWriteLock("lock:goods:RWL");
         RLock rLock = readWriteLock.readLock();
@@ -311,7 +309,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
     }
 
     /**
-     * 继续支付
+     * 继续支付 生成支付订单html
      */
     @Override
     public Result<String> continuePay(Long outTradeNo) {

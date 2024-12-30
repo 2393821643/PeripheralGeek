@@ -103,6 +103,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
         }
         String userId = StpUtil.getLoginIdAsString();
         commentGoodCountBloom.add(userId + commentId.toString());
+        // 生成点赞记录
         CommentGood commentGood = CommentGood.builder()
                 .id(userId + commentId.toString())
                 .commentId(commentId)
@@ -110,6 +111,10 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
                 .targetId(comment.getTargetId())
                 .build();
         commentGoodDao.insert(commentGood);
+        // 修改点赞数
+        Comment rusultComment = getById(commentId);
+        rusultComment.setGoodCount(rusultComment.getGoodCount()+1);
+        updateById(rusultComment);
         return Result.success("点赞成功");
     }
 
@@ -120,6 +125,10 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
     public Result deleteGoodComment(Long commentId) {
         String userId = StpUtil.getLoginIdAsString();
         commentGoodDao.deleteById(userId + commentId.toString());
+        // 修改点赞数
+        Comment rusultComment = getById(commentId);
+        rusultComment.setGoodCount(rusultComment.getGoodCount()-1);
+        updateById(rusultComment);
         return Result.success("取消点赞成功");
     }
 

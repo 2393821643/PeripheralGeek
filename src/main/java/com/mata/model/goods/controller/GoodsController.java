@@ -2,6 +2,7 @@ package com.mata.model.goods.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
+import com.mata.common.result.Suggest;
 import com.mata.model.goods.dto.GoodsAddDto;
 import com.mata.model.goods.dto.GoodsUpdateDto;
 import com.mata.common.result.PageResult;
@@ -75,7 +76,7 @@ public class GoodsController {
      * 返回商品推荐词
      */
     @GetMapping("/suggest/{goodsName}")
-    public Result<List<String>> getSuggestions(@PathVariable("goodsName") String goodsName){
+    public Result<List<Suggest>> getSuggestions(@PathVariable("goodsName") String goodsName){
         return goodsService.getSuggestions(goodsName);
     }
 

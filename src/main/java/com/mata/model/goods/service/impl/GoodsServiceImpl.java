@@ -4,6 +4,7 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.mata.common.result.Suggest;
 import com.mata.model.goods.esDoc.GoodsDoc;
 import com.mata.model.goods.dao.GoodsDao;
 import com.mata.model.goods.esDao.GoodsDocDao;
@@ -31,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -49,10 +51,6 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
 
     @Value("${file.path}")
     private String filePath;
-
-    @Autowired
-    @Qualifier("goodsBloom")
-    private RBloomFilter<Long> goodsBloomFilter;
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
@@ -230,8 +228,10 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
      * 返回商品推荐词
      */
     @Override
-    public Result<List<String>> getSuggestions(String goodsName) {
-        List<String> suggestions = goodsDocDao.getSuggestions(goodsName);
+    public Result<List<Suggest>> getSuggestions(String goodsName) {
+        List<String> suggestionStr = goodsDocDao.getSuggestions(goodsName);
+        List<Suggest> suggestions = new ArrayList<>();
+        suggestionStr.forEach(suggest->suggestions.add(new Suggest(suggest)));
         return Result.success(suggestions);
     }
 
@@ -251,11 +251,6 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
     @Override
     public Result<Goods> getGoodsById(Long goodsId) {
         Goods resultGoods = null;
-        // 先通过布隆过滤器查看是否存在此id商品
-        boolean isExist = goodsBloomFilter.contains(goodsId);
-        if (!isExist) {
-            return Result.error("此商品不存在");
-        }
         // 查Redis缓存
         String goodsJson = stringRedisTemplate.opsForValue().get(RedisCommonKey.GOODS_PRE_KEY + goodsId);
         // 检查查出的缓存是否为空

@@ -21,7 +21,7 @@ public class OrderController {
     private OrderService orderService;
 
     /**
-     * 购买商品，返回支付html
+     * 购买商品，返回支付订单号
      */
     @PostMapping("/buy/{goodsId}")
     @SaCheckLogin
@@ -39,7 +39,7 @@ public class OrderController {
     }
 
     /**
-     * 继续支付
+     * 继续支付 生成支付订单html
      */
     @PostMapping("/buy/continue/{outTradeNo}")
     @SaCheckLogin

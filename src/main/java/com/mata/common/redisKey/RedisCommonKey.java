@@ -101,4 +101,10 @@ public class RedisCommonKey {
     // 推荐文章列表键
     public final static String RECOMMEND_ARTICLE_LIST_KEY = "article:recommend:list";
 
+    // 发送修改数据库商品数量消息队列的锁前缀
+    public final static String UPDATE_GOODS_COUNT_PRE_KEY = "lock:goods:count:";
+
+    // 发送修改数据库商品数量消息队列的锁时间
+    public final static long UPDATE_GOODS_COUNT_TIME = 5;
+
 }
