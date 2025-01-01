@@ -60,12 +60,14 @@ public class OrderController {
 
     /**
      * 获取订单列表
+     * @param page:页数
+     * @param state: 查询条件 1：所有订单/2：未支付订单/3：待发货/4：已完成
      */
-    @GetMapping("/list/{page}")
+    @GetMapping("/list/{page}/{state}")
     @SaCheckLogin
     @SaCheckRole("user")
-    public Result<PageResult<Order>> getOrderPage(@PathVariable("page") Integer page) {
-        return orderService.getOrderPage(page);
+    public Result<PageResult<Order>> getOrderPage(@PathVariable("page") Integer page,@PathVariable("state")Integer state) {
+        return orderService.getOrderPage(page,state);
     }
 
     /**

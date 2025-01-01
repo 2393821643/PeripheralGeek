@@ -5,6 +5,7 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mata.model.goods.dao.GoodsDao;
@@ -86,7 +87,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
         Result<Goods> goodsResult = goodsService.getGoodsById(goodsId);
         Goods goods = goodsResult.getData();
         String goodsName = goods.getGoodsName();
-        // 计算商品数量
+        // 计算商品总价
         double goodsTotalPrice = goods.getGoodsPrice() * buyMessageDto.getCount();
         // 生成订单
         // 订单id
@@ -129,7 +130,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
                     .build();
             rabbitTemplate.convertAndSend("UpdateCountExchange", "updateCountKey", message);
         }
-        return Result.success(outTradeNo, null);
+        return Result.success(outTradeNo, "下单成功");
     }
 
     /**
@@ -365,15 +366,27 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
 
     /**
      * 获取订单列表
+     * @param pageNum:页数
+     * @param state: 查询条件 1：所有订单/2：未支付订单/3：待发货/4：已完成
      */
     @Override
-    public Result<PageResult<Order>> getOrderPage(Integer page) {
+    public Result<PageResult<Order>> getOrderPage(Integer pageNum,Integer state) {
         // 条件
-        Page<Order> orderPage = lambdaQuery()
-                .select(Order::getGoodsName, Order::getGoodsUrl, Order::getState, Order::getPrice, Order::getGoodsCount)
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(Order::getOutTradeNo,Order::getUserId,Order::getGoodsId,Order::getGoodsName, Order::getGoodsUrl, Order::getState, Order::getPrice, Order::getGoodsCount,Order::getCreateTime)
                 .eq(Order::getUserId, StpUtil.getLoginIdAsInt())
-                .orderByDesc(Order::getCreateTime)
-                .page(new Page<>(page, 20));
+                .orderByDesc(Order::getCreateTime);
+        if (state == 2){
+            wrapper.eq(Order::getState,"未支付");
+        }
+        if (state == 3){
+            wrapper.eq(Order::getState,"待发货");
+        }
+        if (state == 4){
+            wrapper.eq(Order::getState,"已完成");
+        }
+        Page<Order> page = Page.of(pageNum, 20);
+        Page<Order> orderPage = this.page(page, wrapper);
         // 装载数据
         PageResult<Order> orderResult = new PageResult<>();
         orderResult.setRecords(orderPage.getRecords());

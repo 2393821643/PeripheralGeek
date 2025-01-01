@@ -257,6 +257,8 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
         if (!StrUtil.isEmpty(goodsJson)){
             resultGoods = JSONUtil.toBean(goodsJson, Goods.class);
             return Result.success(resultGoods);
+        }else if ("".equals(goodsJson)){
+            return Result.error("此商品已下架或删除");
         }
         // 加锁创建缓存
         RLock lock = redissonClient.getLock(RedisCommonKey.GOODS_LOCK_PRE_KEY+goodsId); // 创建锁对象
@@ -266,6 +268,10 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
             if (isLock){
                 // 查数据库
                 resultGoods = getById(goodsId);
+                if (resultGoods == null){
+                    stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY+goodsId,"",RedisCommonKey.GOODS_TIME,TimeUnit.MINUTES);
+                    return Result.error("此商品已下架或删除");
+                }
                 // 创建缓存
                 String toGoodsJson = JSONUtil.toJsonStr(resultGoods);
                 stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY+goodsId,toGoodsJson,RedisCommonKey.GOODS_TIME,TimeUnit.MINUTES);

@@ -47,8 +47,10 @@ public interface OrderService extends IService<Order> {
 
     /**
      * 获取订单列表
+     * @param page:页数
+     * @param state: 查询条件 1：所有订单/2：未支付订单/3：待发货/4：已完成
      */
-    Result<PageResult<Order>> getOrderPage(Integer page);
+    Result<PageResult<Order>> getOrderPage(Integer page,Integer state);
 
     /**
      * 关闭交易

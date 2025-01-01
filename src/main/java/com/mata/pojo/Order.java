@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -18,6 +20,7 @@ import java.time.LocalDateTime;
 public class Order {
     // 订单号
     @TableId(value="out_trade_no", type= IdType.NONE)
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long outTradeNo;
 
     // 用户id
@@ -26,6 +29,7 @@ public class Order {
 
     // 商品id
     @TableField("goods_id")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long goodsId;
 
     // 价格
