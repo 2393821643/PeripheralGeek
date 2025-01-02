@@ -257,7 +257,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
                     .outTradeNo(Long.valueOf(outTradeNo))
                     .goodsName(goodsName)
                     .price(Double.valueOf(price))
-                    .state("已支付")
+                    .state("待发货")
                     .build();
             // 修改数据库消息
             this.updateOrder(order);

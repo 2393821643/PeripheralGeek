@@ -68,4 +68,8 @@ public class Order {
     // 商品数量
     @TableField("goods_count")
     private Integer goodsCount;
+
+    // 快递编码
+    @TableField("courier_code")
+    private String courierCode;
 }

@@ -56,6 +56,7 @@ public class AlipayUtil {
         model.setTotalAmount(cost.toString());
         // 销售产品码 固定值，别改
         model.setProductCode("FAST_INSTANT_TRADE_PAY");
+        model.setQrPayMode("1");
         // 装载模型
         request.setBizModel(model);
         request.setNotifyUrl(payNoticeUrl);
