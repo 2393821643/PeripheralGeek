@@ -1,11 +1,14 @@
 package com.mata.model.article.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mata.common.redisKey.RedisCommonKey;
 import com.mata.common.result.Result;
+import com.mata.model.article.dao.ArticleDao;
 import com.mata.model.article.dao.RecommendArticleDao;
 import com.mata.model.article.service.RecommendArticleService;
 import com.mata.model.article.vo.RecommendArticleVo;
+import com.mata.pojo.Article;
 import com.mata.pojo.RecommendArticle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -24,11 +27,19 @@ public class RecommendArticleServiceImpl extends ServiceImpl<RecommendArticleDao
     @Autowired
     private RedisTemplate redisTemplate;
 
+    @Autowired
+    private ArticleDao articleDao;
+
     /**
      * 新增推荐文章
      */
     @Override
     public Result addRecommendArticle(Long articleId) {
+        // 查找此文章是否存在
+        boolean exists = articleDao.exists(new LambdaQueryWrapper<Article>().eq(Article::getArticleId, articleId));
+        if (!exists){
+            return Result.error("此文章不存在");
+        }
         try {
             save(new RecommendArticle(articleId));
         }catch (DataAccessException e){
