@@ -14,8 +14,14 @@ public class ArticleSearchDto {
     // 文章名
     private String title;
 
+    // 文章id
+    private Long articleId;
+
     // 作者id
     private Integer userId;
+
+    // 状态 已审核 未审核 审核未通过
+    private String state;
 
     // 页
     private Integer page;

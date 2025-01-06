@@ -12,6 +12,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -58,18 +59,19 @@ public class ArticleDocDaoImpl implements ArticleDocDao {
     public PageResult<ArticleDoc> getArticleByName(String articleName,Integer page) {
         // 创建请求对象
         SearchRequest searchRequest = new SearchRequest("article");
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
         // DSL
         // 查看搜索商品名是不是空，空就返回推荐文章
-        if (StrUtil.isEmpty(articleName)){
-            searchRequest.source()
-                    .query(QueryBuilders.matchAllQuery());
-        }else {
-            searchRequest.source()
-                    .query(QueryBuilders.matchQuery("all",articleName));
+        if (StrUtil.isEmpty(articleName)) {
+            boolQuery.must(QueryBuilders.matchAllQuery());
+        } else {
+            boolQuery.must(QueryBuilders.matchQuery("all", articleName));
         }
+        boolQuery.filter(QueryBuilders.termQuery("articleState", "已审核"));
         // 分页 一次20个结果
-        searchRequest.source().sort("createTime", SortOrder.DESC);
         searchRequest.source()
+                .query(boolQuery)
+                .sort("createTime", SortOrder.DESC)
                 .from((page - 1) * 20)
                 .size(20);
         // 发送请求 解析响应

@@ -10,6 +10,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mata.model.goods.dao.GoodsDao;
 import com.mata.model.order.dao.OrderDao;
+import com.mata.model.order.dto.OrderConditionDto;
+import com.mata.model.order.dto.OrderShipmentDto;
+import com.mata.model.order.vo.OrderSendMailVo;
 import com.mata.model.user.dao.UserDao;
 import com.mata.model.order.dto.BuyMessageDto;
 import com.mata.common.result.PageResult;
@@ -113,16 +116,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
         rabbitTemplate.convertAndSend("OrderExchange", "createOrderKey", JSONUtil.toJsonStr(order));
         // 减少缓存商品数量
         decreaseCacheGoodsCount(buyMessageDto.getCount(), goodsId);
-        System.out.println("1");
         // 获取发送消息队列锁 没获取到就不发送消息队列 获取到加锁5分钟
-        RLock lock = redissonClient.getLock(RedisCommonKey.UPDATE_GOODS_COUNT_PRE_KEY+goodsId);
+        RLock lock = redissonClient.getLock(RedisCommonKey.UPDATE_GOODS_COUNT_PRE_KEY + goodsId);
         boolean isLock = false;
         try {
             isLock = lock.tryLock(0, RedisCommonKey.UPDATE_GOODS_COUNT_TIME, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        if (isLock){
+        if (isLock) {
             // 发送消息队列，修改数据库商品数量，延迟队列
             Message message = MessageBuilder
                     .withBody(goodsId.toString().getBytes(StandardCharsets.UTF_8)) //设置消息内容
@@ -366,24 +368,25 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
 
     /**
      * 获取订单列表
+     *
      * @param pageNum:页数
-     * @param state: 查询条件 1：所有订单/2：未支付订单/3：待发货/4：已完成
+     * @param state:     查询条件 1：所有订单/2：未支付订单/3：待发货/4：已完成
      */
     @Override
-    public Result<PageResult<Order>> getOrderPage(Integer pageNum,Integer state) {
+    public Result<PageResult<Order>> getOrderPage(Integer pageNum, Integer state) {
         // 条件
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(Order::getOutTradeNo,Order::getUserId,Order::getGoodsId,Order::getGoodsName, Order::getGoodsUrl, Order::getState, Order::getPrice, Order::getGoodsCount,Order::getCreateTime)
+        wrapper.select(Order::getOutTradeNo, Order::getUserId, Order::getGoodsId, Order::getGoodsName, Order::getGoodsUrl, Order::getState, Order::getPrice, Order::getGoodsCount, Order::getCreateTime)
                 .eq(Order::getUserId, StpUtil.getLoginIdAsInt())
                 .orderByDesc(Order::getCreateTime);
-        if (state == 2){
-            wrapper.eq(Order::getState,"未支付");
+        if (state == 2) {
+            wrapper.eq(Order::getState, "未支付");
         }
-        if (state == 3){
-            wrapper.eq(Order::getState,"待发货");
+        if (state == 3) {
+            wrapper.eq(Order::getState, "待发货");
         }
-        if (state == 4){
-            wrapper.eq(Order::getState,"已完成");
+        if (state == 4) {
+            wrapper.eq(Order::getState, "已完成");
         }
         Page<Order> page = Page.of(pageNum, 20);
         Page<Order> orderPage = this.page(page, wrapper);
@@ -424,15 +427,67 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
      * 管理员修改订单状态
      */
     @Override
-    public Result updateOrderState(Long outTradeNo, String state) {
+    public Result updateOrderState(OrderShipmentDto orderShipmentDto) {
         // 获得订单信息
-        Order order = getOrderByOutTradeNo(outTradeNo);
-        if (order == null){
+        Order order = getOrderByOutTradeNo(orderShipmentDto.getOutTradeNo());
+        if (order == null) {
             return Result.error("此订单不存在");
         }
-        order.setState(state);
-        // 异步修改数据库
-        rabbitTemplate.convertAndSend("OrderExchange", "updateOrderKey", JSONUtil.toJsonStr(order));
-        return Result.success("修改成功");
+        order.setState("已完成");
+        order.setCourierCode(orderShipmentDto.getCourierCode());
+        // 修改数据库
+        updateById(order);
+        // 删除缓存
+        stringRedisTemplate.delete(RedisCommonKey.ORDER_PRE_KEY + order.getOutTradeNo());
+        // 重建缓存
+        stringRedisTemplate.opsForValue().set(RedisCommonKey.ORDER_PRE_KEY + order.getOutTradeNo(), JSONUtil.toJsonStr(order), RedisCommonKey.ORDER_TIME, TimeUnit.MINUTES);
+        // 异步发送邮箱
+        rabbitTemplate.convertAndSend("OrderExchange", "sendOrderEmailKey", orderShipmentDto.getOutTradeNo());
+        return Result.success("发货成功");
+    }
+
+    /**
+     * 发送邮箱 提示发货成功
+     */
+    @Override
+    public void sendEmailOrderMessage(Long outTradeNo) {
+        // 数据库通过订单号查找订单
+        OrderSendMailVo order = baseMapper.getOrderToSendEmail(outTradeNo);
+        // 发送邮箱
+        sendEmailUtil.sendEmail(order.getEmail(), EmailMessage.TITLE, EmailMessage.SEND_ORDER_GOODS_NAME + order.getGoodsName()
+                + EmailMessage.SEND_ORDER_OUT_TRADE_NO + order.getOutTradeNo() + EmailMessage.SEND_ORDER_COURIER_CODE + order.getCourierCode());
+    }
+
+    /**
+     * 管理员查找订单列表
+     */
+    @Override
+    public Result<PageResult<Order>> getAdminOrderPage(OrderConditionDto orderConditionDto) {
+        // 条件
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(Order::getOutTradeNo, Order::getUserId, Order::getGoodsId, Order::getGoodsName, Order::getGoodsUrl, Order::getState, Order::getGoodsCount, Order::getCreateTime)
+                .orderByDesc(Order::getCreateTime);
+        if (orderConditionDto.getState() == 2) {
+            wrapper.eq(Order::getState, "未支付");
+        }
+        if (orderConditionDto.getState() == 3) {
+            wrapper.eq(Order::getState, "待发货");
+        }
+        if (orderConditionDto.getState() == 4) {
+            wrapper.eq(Order::getState, "已完成");
+        }
+        if (orderConditionDto.getUserId() != null){
+            wrapper.eq(Order::getUserId,orderConditionDto.getUserId());
+        }
+        if (orderConditionDto.getOutTradeNo() != null){
+            wrapper.eq(Order::getOutTradeNo,orderConditionDto.getOutTradeNo());
+        }
+        Page<Order> page = Page.of(orderConditionDto.getPageNum(), 20);
+        Page<Order> orderPage = this.page(page, wrapper);
+        // 装载数据
+        PageResult<Order> orderResult = new PageResult<>();
+        orderResult.setRecords(orderPage.getRecords());
+        orderResult.setTotal(orderPage.getTotal());
+        return Result.success(orderResult);
     }
 }

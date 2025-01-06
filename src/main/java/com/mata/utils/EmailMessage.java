@@ -14,4 +14,11 @@ public class EmailMessage {
 
     public static final String SEND_BUY_SUCCESS_MESSAGE_PAY=",共消费：";
 
+    public static final String SEND_ORDER_GOODS_NAME = "您购买的商品:";
+
+    public static final String SEND_ORDER_OUT_TRADE_NO = ",订单号:";
+
+    public static final String SEND_ORDER_COURIER_CODE = "已成功发货，快递编码为:";
+
+
 }

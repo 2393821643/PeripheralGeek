@@ -11,4 +11,33 @@
         WHERE a.article_id = #{articleId}
           AND a.article_state = "已审核"
     </select>
+
+    <select id="getArticleAuditList" resultType="com.mata.model.article.vo.ArticleAuditVo">
+        SELECT
+            ar.article_id,
+            ar.user_id,
+            ar.article_state,
+            ar.article_title,
+            ar.article_img_url,
+            ar.article_context_url,
+            ar.brief_introduction,
+            ar.create_time,
+            au.non_pass_cause
+        FROM tb_article ar
+                 LEFT JOIN tb_audit au
+                           ON ar.article_id = au.article_id
+        <where>
+          ar.article_state = #{articleSearchDto.state}
+            <if test=" articleSearchDto.articleId != null and articleSearchDto.articleId != '' ">
+                AND ar.article_id = #{articleSearchDto.articleId}
+            </if>
+            <if test=" articleSearchDto.userId != null and articleSearchDto.userId != '' ">
+                AND ar.user_id = #{articleSearchDto.userId}
+            </if>
+            <if test=" articleSearchDto.title != null and articleSearchDto.title != '' ">
+                AND ar.article_title like concat(#{articleSearchDto.title},'%')
+            </if>
+        </where>
+        ORDER BY ar.create_time DESC
+    </select>
 </mapper>

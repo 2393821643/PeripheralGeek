@@ -51,7 +51,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     @Override
     public Result<User> getUserInformationById(Integer userId) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(User::getUserId, User::getEmail, User::getSex, User::getUsername, User::getHeadUrl, User::getSign)
+        wrapper.select(User::getUserId, User::getEmail, User::getSex, User::getUsername, User::getHeadUrl, User::getSign,User::getRoleId)
                 .eq(User::getUserId, userId);
         User resultUser = getOne(wrapper);
         return Result.success(resultUser);

@@ -55,5 +55,17 @@ public class OrderMessageListener {
         orderService.updateOrder(JSONUtil.toBean(orderJson,Order.class));
     }
 
+    /**
+     * 监听发送发货邮箱
+     */
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = "sendOrderEmail"),
+            exchange = @Exchange(name = "OrderExchange",type = ExchangeTypes.DIRECT),
+            key = {"sendOrderEmailKey"}
+    ))
+    public void listenOrderSendEmail(Long outTradeNo){
+        orderService.sendEmailOrderMessage(outTradeNo);
+    }
+
 
 }

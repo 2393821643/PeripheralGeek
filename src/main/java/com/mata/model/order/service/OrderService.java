@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.mata.model.order.dto.BuyMessageDto;
 import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
+import com.mata.model.order.dto.OrderConditionDto;
+import com.mata.model.order.dto.OrderShipmentDto;
 import com.mata.pojo.Order;
 
 import javax.servlet.http.HttpServletRequest;
@@ -60,5 +62,15 @@ public interface OrderService extends IService<Order> {
     /**
      * 管理员修改订单状态
      */
-    Result updateOrderState(Long outTradeNo, String state);
+    Result updateOrderState(OrderShipmentDto orderShipmentDto);
+
+    /**
+     * 发送邮箱 提示发货成功
+     */
+    void sendEmailOrderMessage(Long outTradeNo);
+
+    /**
+     * 管理员查找订单列表
+     */
+    Result<PageResult<Order>> getAdminOrderPage(OrderConditionDto orderConditionDto);
 }

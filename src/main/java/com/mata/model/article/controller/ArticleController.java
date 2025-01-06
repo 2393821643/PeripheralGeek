@@ -3,12 +3,14 @@ package com.mata.model.article.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import com.mata.common.result.Suggest;
+import com.mata.model.article.dto.ArticleAuditDto;
 import com.mata.model.article.dto.ArticleSearchDto;
 import com.mata.model.article.esDoc.ArticleDoc;
 import com.mata.model.article.dto.ArticleDto;
 import com.mata.model.article.dto.ArticleUpdateDto;
 import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
+import com.mata.model.article.vo.ArticleAuditVo;
 import com.mata.model.article.vo.ArticleVo;
 import com.mata.pojo.Article;
 import com.mata.model.article.service.ArticleService;
@@ -93,6 +95,26 @@ public class ArticleController {
     public Result<List<Suggest>> getSuggest(@PathVariable("articleName") String articleName){
         return articleService.getSuggest(articleName);
     }
+
+    /**
+     * 获取文章列表 根据审核状态
+     */
+    @PostMapping("/list/state")
+    @SaCheckLogin
+    public Result<PageResult<ArticleAuditVo>> getArticleByState(@RequestBody ArticleSearchDto articleSearchDto){
+        return articleService.getArticleByState(articleSearchDto);
+    }
+
+    /**
+     * 管理员审核文章
+     */
+    @PutMapping("/audit")
+    @SaCheckLogin
+    @SaCheckRole("admin")
+    public Result auditArticle(@RequestBody @Validated ArticleAuditDto articleAuditDto){
+        return articleService.auditArticle(articleAuditDto);
+    }
+
 
 
 }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mata.model.order.dao.OrderDao">
+
+
+    <select id="getOrderToSendEmail" resultType="com.mata.model.order.vo.OrderSendMailVo"
+            parameterType="java.lang.Long">
+        SELECT
+            o.out_trade_no,
+            o.goods_name,
+            o.courier_code,
+            u.email
+        FROM tb_order o
+                 LEFT JOIN tb_user u
+                           ON o.user_id = u.user_id
+        WHERE o.out_trade_no = #{outTradeNo}
+    </select>
+</mapper>

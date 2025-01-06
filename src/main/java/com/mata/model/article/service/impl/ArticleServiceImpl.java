@@ -4,12 +4,14 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mata.common.result.Suggest;
+import com.mata.model.article.dao.AuditDao;
+import com.mata.model.article.dto.ArticleAuditDto;
 import com.mata.model.article.dto.ArticleSearchDto;
 import com.mata.model.article.esDoc.ArticleDoc;
 import com.mata.model.article.dao.ArticleDao;
@@ -19,19 +21,18 @@ import com.mata.model.article.dto.ArticleUpdateDto;
 import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
 import com.mata.common.enumPackage.CosFileMkdir;
+import com.mata.model.article.vo.ArticleAuditVo;
 import com.mata.model.article.vo.ArticleVo;
 import com.mata.model.user.dao.UserDao;
 import com.mata.pojo.Article;
 import com.mata.model.article.service.ArticleService;
+import com.mata.pojo.Audit;
 import com.mata.pojo.User;
 import com.mata.utils.CosClientUtil;
-import com.mata.common.redisKey.RedisCommonKey;
 import com.mata.utils.HtmlUtil;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.Cursor;
-import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -64,6 +65,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
 
     @Autowired
     private UserDao userDao;
+
+    @Autowired
+    private AuditDao auditDao;
 
 
     /**
@@ -308,5 +312,64 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         return Result.success(suggestions);
     }
 
+    /**
+     * 获取文章列表 根据审核状态
+     */
+    @Override
+    public Result<PageResult<ArticleAuditVo>> getArticleByState(ArticleSearchDto articleSearchDto) {
+        // 获取当前账号权限
+        List<String> roleList = StpUtil.getRoleList();
+        String role = roleList.get(0);
+        // 如果账号是user,只能看到自己的文章
+        if (Objects.equals(role, "user")){
+            articleSearchDto.setUserId(StpUtil.getLoginIdAsInt());
+        }
+        // 配置页
+        Page<ArticleAuditVo> articlePage = new Page(articleSearchDto.getPage(), 20);
+        // 查询
+        IPage<ArticleAuditVo> articleAuditList = baseMapper.getArticleAuditList(articlePage, articleSearchDto);
+        PageResult<ArticleAuditVo> resultPage = new PageResult<>(articleAuditList.getTotal(), articleAuditList.getRecords());
+        return Result.success(resultPage);
+    }
 
+    /**
+     * 管理员审核文章
+     */
+    @Override
+    public Result auditArticle(ArticleAuditDto articleAuditDto) {
+        Integer auditCode = articleAuditDto.getAuditCode();
+        Article resultArticle = getById(articleAuditDto.getArticleId());
+        // 如果通过审核
+        if (auditCode == 1){
+            // 删除未通过审核记录
+            auditDao.deleteById(articleAuditDto.getArticleId());
+            resultArticle.setArticleState("已审核");
+            // 修改es
+            articleDocDao.updateArticle(new ArticleDoc(resultArticle));
+        }else if (auditCode == 2 ){
+            // 如果没通过审核
+            resultArticle.setArticleState("审核未通过");
+            // 更新未通过审核记录
+            Audit audit = new Audit(articleAuditDto.getArticleId(), articleAuditDto.getNonPassCause());
+            saveOrUpdateAudit(audit);
+        }
+        // 修改数据库文章状态
+        updateById(resultArticle);
+        // 修改es
+        articleDocDao.updateArticle(new ArticleDoc(resultArticle));
+        return Result.success("修改成功");
+    }
+
+    /**
+     * 新增或更新审核记录
+     */
+    private void saveOrUpdateAudit(Audit audit){
+        // 查找此记录是否存在
+        boolean exists = auditDao.exists(new LambdaQueryWrapper<Audit>().eq(Audit::getArticleId, audit.getArticleId()));
+        if (exists){
+            auditDao.updateById(audit);
+        }else {
+            auditDao.insert(audit);
+        }
+    }
 }

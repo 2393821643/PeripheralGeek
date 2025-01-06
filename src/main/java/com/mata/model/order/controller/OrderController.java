@@ -5,6 +5,8 @@ import cn.dev33.satoken.annotation.SaCheckRole;
 import com.mata.model.order.dto.BuyMessageDto;
 import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
+import com.mata.model.order.dto.OrderConditionDto;
+import com.mata.model.order.dto.OrderShipmentDto;
 import com.mata.pojo.Order;
 import com.mata.model.order.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,10 +85,20 @@ public class OrderController {
     /**
      * 管理员修改订单状态
      */
-    @PutMapping("/admin/{outTradeNo}")
+    @PutMapping("/admin/shipments")
     @SaCheckLogin
     @SaCheckRole("admin")
-    public Result updateOrderState(@PathVariable("outTradeNo") Long outTradeNo, @RequestParam("state") String state) {
-        return orderService.updateOrderState(outTradeNo, state);
+    public Result updateOrderState(@RequestBody OrderShipmentDto orderShipmentDto) {
+        return orderService.updateOrderState(orderShipmentDto);
+    }
+
+    /**
+     * 管理员查找订单列表
+     */
+    @GetMapping("/admin")
+    @SaCheckLogin
+    @SaCheckRole("admin")
+    public Result<PageResult<Order>> getAdminOrderPage(@RequestBody OrderConditionDto orderConditionDto){
+        return orderService.getAdminOrderPage(orderConditionDto);
     }
 }

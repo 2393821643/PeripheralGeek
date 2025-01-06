@@ -125,7 +125,10 @@ PUT /article
       },
       "createTime":{
         "type" : "long"
-       }
+       },
+      "articleState":{
+        "type": "keyword"
+      },
       "all":{
         "type": "text",
         "analyzer": "text_anlyzer",
