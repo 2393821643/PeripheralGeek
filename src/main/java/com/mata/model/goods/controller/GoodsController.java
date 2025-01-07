@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import com.mata.common.result.Suggest;
 import com.mata.model.goods.dto.GoodsAddDto;
+import com.mata.model.goods.dto.GoodsConditionDto;
 import com.mata.model.goods.dto.GoodsUpdateDto;
 import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
@@ -58,7 +59,7 @@ public class GoodsController {
     @PutMapping("/admin/img/{goodsId}")
     @SaCheckLogin
     @SaCheckRole("admin")
-    public Result updateGoodsImg(@PathVariable("goodsId")Long goodsId, @RequestParam MultipartFile goodsImg){
+    public Result<String> updateGoodsImg(@PathVariable("goodsId")Long goodsId, @RequestParam MultipartFile goodsImg){
         return goodsService.updateGoodsImg(goodsId,goodsImg);
     }
 
@@ -68,7 +69,7 @@ public class GoodsController {
     @PutMapping("/admin/introduction/{goodsId}")
     @SaCheckLogin
     @SaCheckRole("admin")
-    public Result updateGoodsIntroduction(@PathVariable("goodsId")Long goodsId, @RequestParam String goodsIntroduction){
+    public Result<String> updateGoodsIntroduction(@PathVariable("goodsId")Long goodsId, @RequestParam String goodsIntroduction){
         return goodsService.updateGoodsInformation(goodsId,goodsIntroduction);
     }
 
@@ -94,6 +95,16 @@ public class GoodsController {
     @GetMapping("/{goodsId}")
     public Result<Goods> getGoodsById(@PathVariable("goodsId") Long goodsId){
         return goodsService.getGoodsById(goodsId);
+    }
+
+    /**
+     * 管理员获取商品列表
+     */
+    @PostMapping("/admin/list")
+    @SaCheckLogin
+    @SaCheckRole("admin")
+    public Result<PageResult<Goods>> getGoodsToAdmin( @RequestBody GoodsConditionDto goodsConditionDto){
+        return goodsService.getGoodsToAdmin(goodsConditionDto);
     }
 
 

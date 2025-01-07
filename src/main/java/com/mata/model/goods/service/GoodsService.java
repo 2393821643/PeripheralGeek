@@ -3,6 +3,7 @@ package com.mata.model.goods.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.mata.common.result.Suggest;
 import com.mata.model.goods.dto.GoodsAddDto;
+import com.mata.model.goods.dto.GoodsConditionDto;
 import com.mata.model.goods.dto.GoodsUpdateDto;
 import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
@@ -38,14 +39,14 @@ public interface GoodsService extends IService<Goods> {
      * 管理员修改图片
      * 发送消息队列异步添加到es和mysql
      */
-    Result updateGoodsImg(Long goodsId, MultipartFile goodsImg);
+    Result<String> updateGoodsImg(Long goodsId, MultipartFile goodsImg);
 
 
     /**
      * 管理员修改介绍
      * 发送消息队列异步添加到es和mysql
      */
-    Result updateGoodsInformation(Long goodsId, String goodsIntroduction);
+    Result<String> updateGoodsInformation(Long goodsId, String goodsIntroduction);
 
     /**
      * 返回商品推荐词
@@ -61,4 +62,10 @@ public interface GoodsService extends IService<Goods> {
      * 搜索商品 通过id
      */
     Result<Goods> getGoodsById(Long goodsId);
+
+
+    /**
+     * 管理员获取商品列表
+     */
+    Result<PageResult<Goods>> getGoodsToAdmin(GoodsConditionDto goodsConditionDto);
 }

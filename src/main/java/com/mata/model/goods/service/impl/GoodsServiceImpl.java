@@ -3,8 +3,11 @@ package com.mata.model.goods.service.impl;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mata.common.result.Suggest;
+import com.mata.model.goods.dto.GoodsConditionDto;
 import com.mata.model.goods.esDoc.GoodsDoc;
 import com.mata.model.goods.dao.GoodsDao;
 import com.mata.model.goods.esDao.GoodsDocDao;
@@ -17,6 +20,7 @@ import com.mata.pojo.Goods;
 import com.mata.model.goods.service.GoodsService;
 import com.mata.utils.CosClientUtil;
 import com.mata.common.redisKey.RedisCommonKey;
+import io.netty.util.internal.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
@@ -34,6 +38,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -133,7 +138,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
         // 数据库删除
         removeById(goodsId);
         // 缓存删除
-        stringRedisTemplate.delete(RedisCommonKey.GOODS_PRE_KEY+goodsId);
+        stringRedisTemplate.delete(RedisCommonKey.GOODS_PRE_KEY + goodsId);
         // es删除
         goodsDocDao.deleteGoods(goodsId.toString());
         return Result.success("删除成功");
@@ -147,12 +152,12 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
     public Result updateGoods(GoodsUpdateDto goodsUpdateDto) {
         // 查数据库
         Goods goods = getById(goodsUpdateDto.getGoodsId());
-         goods.setGoodsName(goodsUpdateDto.getGoodsName());
-         goods.setGoodsBrand(goodsUpdateDto.getGoodsBrand());
-         goods.setGoodsType(goodsUpdateDto.getGoodsType());
-         goods.setGoodsConnectionType(goodsUpdateDto.getGoodsConnectionType());
-         goods.setGoodsCount(goodsUpdateDto.getGoodsCount());
-         goods.setGoodsPrice(goodsUpdateDto.getGoodsPrice());
+        goods.setGoodsName(goodsUpdateDto.getGoodsName());
+        goods.setGoodsBrand(goodsUpdateDto.getGoodsBrand());
+        goods.setGoodsType(goodsUpdateDto.getGoodsType());
+        goods.setGoodsConnectionType(goodsUpdateDto.getGoodsConnectionType());
+        goods.setGoodsCount(goodsUpdateDto.getGoodsCount());
+        goods.setGoodsPrice(goodsUpdateDto.getGoodsPrice());
         updateGoodsToMysql(goods);
         updateGoodsToEs(goods);
         return Result.success("修改成功");
@@ -165,7 +170,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
         updateById(goods);
         String goodsJson = JSONUtil.toJsonStr(goods);
         // 更新redis缓存
-        stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY+goods.getGoodsId(),goodsJson,RedisCommonKey.GOODS_TIME,TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY + goods.getGoodsId(), goodsJson, RedisCommonKey.GOODS_TIME, TimeUnit.MINUTES);
     }
 
     /**
@@ -181,7 +186,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
      * 发送消息队列异步添加到es和mysql
      */
     @Override
-    public Result updateGoodsImg(Long goodsId, MultipartFile goodsImg) {
+    public Result<String> updateGoodsImg(Long goodsId, MultipartFile goodsImg) {
         String imgUrl = null;
         try {
             // 写入cos
@@ -192,12 +197,11 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
             throw new RuntimeException(e);
         }
         // 组装对象
-        Goods goods = Goods.builder()
-                .goodsId(goodsId)
-                .goodsUrl(imgUrl)
-                .build();
+        Goods goods = getById(goodsId);
+        goods.setGoodsUrl(imgUrl);
         goodsDocDao.updateGoodsFile(goods, CosFileMkdir.GoodsImg);
-        return Result.success("修改图片成功");
+        updateGoodsToMysql(goods);
+        return Result.success(imgUrl,"修改图片成功");
     }
 
     /**
@@ -205,7 +209,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
      * 发送消息队列异步添加到es和mysql
      */
     @Override
-    public Result updateGoodsInformation(Long goodsId, String goodsIntroduction) {
+    public Result<String> updateGoodsInformation(Long goodsId, String goodsIntroduction) {
         String imgInfomationUrl = null;
         try {
             // 写入cos
@@ -216,12 +220,12 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
             throw new RuntimeException(e);
         }
         // 组装对象
-        Goods goods = Goods.builder()
-                .goodsId(goodsId)
-                .goodsIntroduction(imgInfomationUrl)
-                .build();
+        Goods goods = getById(goodsId);
+        goods.setGoodsIntroduction(imgInfomationUrl);
         goodsDocDao.updateGoodsFile(goods, CosFileMkdir.GoodsImg);
-        return Result.success("修改商品介绍成功");
+        updateGoodsToMysql(goods);
+        goodsDocDao.updateGoodsFile(goods, CosFileMkdir.GoodsHtmlImg);
+        return Result.success(imgInfomationUrl,"修改商品介绍成功");
     }
 
     /**
@@ -231,7 +235,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
     public Result<List<Suggest>> getSuggestions(String goodsName) {
         List<String> suggestionStr = goodsDocDao.getSuggestions(goodsName);
         List<Suggest> suggestions = new ArrayList<>();
-        suggestionStr.forEach(suggest->suggestions.add(new Suggest(suggest)));
+        suggestionStr.forEach(suggest -> suggestions.add(new Suggest(suggest)));
         return Result.success(suggestions);
     }
 
@@ -254,40 +258,59 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
         // 查Redis缓存
         String goodsJson = stringRedisTemplate.opsForValue().get(RedisCommonKey.GOODS_PRE_KEY + goodsId);
         // 检查查出的缓存是否为空
-        if (!StrUtil.isEmpty(goodsJson)){
+        if (!StrUtil.isEmpty(goodsJson)) {
             resultGoods = JSONUtil.toBean(goodsJson, Goods.class);
             return Result.success(resultGoods);
-        }else if ("".equals(goodsJson)){
+        } else if ("".equals(goodsJson)) {
             return Result.error("此商品已下架或删除");
         }
         // 加锁创建缓存
-        RLock lock = redissonClient.getLock(RedisCommonKey.GOODS_LOCK_PRE_KEY+goodsId); // 创建锁对象
+        RLock lock = redissonClient.getLock(RedisCommonKey.GOODS_LOCK_PRE_KEY + goodsId); // 创建锁对象
         try {
             // 加锁
             boolean isLock = lock.tryLock(0, RedisCommonKey.GOODS_LOCK_TIME, TimeUnit.SECONDS);
-            if (isLock){
+            if (isLock) {
                 // 查数据库
                 resultGoods = getById(goodsId);
-                if (resultGoods == null){
-                    stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY+goodsId,"",RedisCommonKey.GOODS_TIME,TimeUnit.MINUTES);
+                if (resultGoods == null) {
+                    stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY + goodsId, "", RedisCommonKey.GOODS_TIME, TimeUnit.MINUTES);
                     return Result.error("此商品已下架或删除");
                 }
                 // 创建缓存
                 String toGoodsJson = JSONUtil.toJsonStr(resultGoods);
-                stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY+goodsId,toGoodsJson,RedisCommonKey.GOODS_TIME,TimeUnit.MINUTES);
-            }else {
+                stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_PRE_KEY + goodsId, toGoodsJson, RedisCommonKey.GOODS_TIME, TimeUnit.MINUTES);
+            } else {
                 Thread.sleep(50);
                 getGoodsById(goodsId);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             // 解开锁
             boolean heldByCurrentThread = lock.isHeldByCurrentThread();
-            if (heldByCurrentThread){
+            if (heldByCurrentThread) {
                 lock.unlock();
             }
         }
         return Result.success(resultGoods);
+    }
+
+    /**
+     * 管理员获取商品列表
+     */
+    @Override
+    public Result<PageResult<Goods>> getGoodsToAdmin(GoodsConditionDto goodsConditionDto) {
+        LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
+        // id/商品名不为空则添加条件，否则全查
+        if (!StrUtil.isEmpty(goodsConditionDto.getGoodsName())) {
+            wrapper.like(Goods::getGoodsName, goodsConditionDto.getGoodsName());
+        }
+        if (goodsConditionDto.getGoodsId() != null) {
+            wrapper.eq(Goods::getGoodsId,goodsConditionDto.getGoodsId());
+        }
+        Page<Goods> page = Page.of(goodsConditionDto.getPageNum(), 20);
+        Page<Goods> resultGoods = this.page(page, wrapper);
+        PageResult<Goods> goodsPageResult = new PageResult<>(resultGoods.getTotal(),resultGoods.getRecords());
+        return Result.success(goodsPageResult);
     }
 }
