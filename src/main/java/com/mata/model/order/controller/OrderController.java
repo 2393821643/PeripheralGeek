@@ -88,14 +88,14 @@ public class OrderController {
     @PutMapping("/admin/shipments")
     @SaCheckLogin
     @SaCheckRole("admin")
-    public Result updateOrderState(@RequestBody OrderShipmentDto orderShipmentDto) {
+    public Result updateOrderState(@RequestBody @Validated OrderShipmentDto orderShipmentDto) {
         return orderService.updateOrderState(orderShipmentDto);
     }
 
     /**
      * 管理员查找订单列表
      */
-    @GetMapping("/admin")
+    @PostMapping("/admin")
     @SaCheckLogin
     @SaCheckRole("admin")
     public Result<PageResult<Order>> getAdminOrderPage(@RequestBody OrderConditionDto orderConditionDto){

@@ -465,8 +465,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, Order> implements Or
     public Result<PageResult<Order>> getAdminOrderPage(OrderConditionDto orderConditionDto) {
         // 条件
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(Order::getOutTradeNo, Order::getUserId, Order::getGoodsId, Order::getGoodsName, Order::getGoodsUrl, Order::getState, Order::getGoodsCount, Order::getCreateTime)
-                .orderByDesc(Order::getCreateTime);
+        wrapper.orderByDesc(Order::getCreateTime);
         if (orderConditionDto.getState() == 2) {
             wrapper.eq(Order::getState, "未支付");
         }
