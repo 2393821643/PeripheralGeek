@@ -2,6 +2,7 @@ package com.mata.model.article.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaMode;
 import com.mata.common.result.Suggest;
 import com.mata.model.article.dto.ArticleAuditDto;
 import com.mata.model.article.dto.ArticleSearchDto;
@@ -110,7 +111,7 @@ public class ArticleController {
      */
     @PutMapping("/audit")
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     public Result auditArticle(@RequestBody @Validated ArticleAuditDto articleAuditDto){
         return articleService.auditArticle(articleAuditDto);
     }

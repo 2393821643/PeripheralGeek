@@ -6,6 +6,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.crypto.SmUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.mata.model.auth.dto.RegisterAdminDto;
 import com.mata.model.user.dao.UserDao;
 import com.mata.common.result.Result;
 import com.mata.common.exception.BusinessException;
@@ -263,4 +264,18 @@ public class AuthServiceImpl implements AuthService {
         return Result.success(StpUtil.getTokenValue(),"登录成功");
     }
 
+    /**
+     * 注册管理员
+     */
+    @Override
+    public Result<User> registerAdmin(RegisterAdminDto registerAdminDto) {
+        User user = User.builder()
+                .username(registerAdminDto.getUsername())
+                .password(SmUtil.sm3(registerAdminDto.getPassword()))
+                .roleId(3)
+                .build();
+        userDao.insert(user);
+        user.setPassword("");
+        return Result.success(user,"注册成功,管理员账号为:"+user.getUserId());
+    }
 }

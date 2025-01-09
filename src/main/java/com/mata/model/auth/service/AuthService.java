@@ -1,6 +1,8 @@
 package com.mata.model.auth.service;
 
 import com.mata.common.result.Result;
+import com.mata.model.auth.dto.RegisterAdminDto;
+import com.mata.pojo.User;
 
 public interface AuthService {
     /**
@@ -57,4 +59,10 @@ public interface AuthService {
      * @param password 管理员密码
      */
     Result<String> adminLogin(String id, String password);
+
+
+    /**
+     * 注册管理员
+     */
+    Result<User> registerAdmin(RegisterAdminDto registerAdminDto);
 }

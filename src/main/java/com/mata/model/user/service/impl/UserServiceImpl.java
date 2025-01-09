@@ -4,8 +4,14 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.SmUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.mata.common.result.PageResult;
+import com.mata.model.user.dto.AdminUpdateDto;
+import com.mata.model.user.dto.UserConditionDto;
 import com.mata.model.user.dao.ReceiptInformationDao;
 import com.mata.model.user.dao.UserDao;
 import com.mata.model.user.dto.ReceiptInformationDto;
@@ -25,6 +31,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserService {
@@ -143,5 +150,81 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         return Result.success(receiptInformation);
     }
 
+    /**
+     * 查看管理员列表
+     */
+    @Override
+    public Result<PageResult<User>> adminList(UserConditionDto userConditionDto) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(User::getUserId,User::getUsername)
+                        .in(User::getRoleId,2,3);
+        wrapper.select(User::getUserId,User::getUsername);
+        if (userConditionDto.getUserId() != null){
+            wrapper.eq(User::getUserId,userConditionDto.getUserId());
+        }
+        if (!StrUtil.isEmpty(userConditionDto.getUsername())){
+            wrapper.eq(User::getUsername,userConditionDto.getUsername());
+        }
 
+        Page<User> page = new Page<>(userConditionDto.getPageNum(),20);
+        Page<User> userPage = this.page(page, wrapper);
+        PageResult<User> pageResult = new PageResult<>(userPage.getTotal(),userPage.getRecords());
+        return Result.success(pageResult);
+    }
+
+    /**
+     * 修改管理员信息
+     */
+    @Override
+    public Result updateAdmin(AdminUpdateDto adminUpdateDto) {
+        // 查找此用户
+        User user = getById(adminUpdateDto.getUserId());
+        if (user == null){
+            return Result.error("此账号不存在");
+        }
+        // 检查角色 如果此账号是普通管理员 无法修改超级管理员
+        if (user.getRoleId() == 2 && Objects.equals(StpUtil.getRoleList().get(0), "normal_admin")){
+            return Result.error("你不能修改超级管理员的信息");
+        }
+        // 校验参数
+        if (!StrUtil.isEmpty(adminUpdateDto.getUsername())){
+            if (adminUpdateDto.getUsername().length()>30){
+                return Result.error("用户名不能大于30");
+            }
+            user.setUsername(adminUpdateDto.getUsername());
+        }
+        if (!StrUtil.isEmpty(adminUpdateDto.getPassword())){
+            if (adminUpdateDto.getPassword().length()>30 || adminUpdateDto.getPassword().length()<5 ){
+                return Result.error("密码长度大于5，小于30");
+            }
+            user.setPassword(SmUtil.sm3(adminUpdateDto.getPassword()));
+        }
+        this.updateById(user);
+        return Result.success("修改成功");
+    }
+
+    /**
+     * 删除管理员账号
+     */
+    @Override
+    public Result deleteAdmin(Integer userId) {
+        // 查找此用户
+        User user = getById(userId);
+        if (user == null){
+            return Result.error("此账号不存在");
+        }
+        // 检查是不是超级管理员
+        if (user.getRoleId() == 2){
+            return Result.error("超级管理员无法被删除");
+        }
+        // 检查是否是当前账号
+        if (user.getUserId() == StpUtil.getLoginIdAsInt()){
+            return Result.error("无法删除自己的账号");
+        }
+        // 删除账号
+        removeById(userId);
+        // 下线账号
+        StpUtil.kickout(userId);
+        return Result.success("删除成功");
+    }
 }

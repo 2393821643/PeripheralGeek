@@ -1,10 +1,13 @@
 package com.mata.model.auth.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaMode;
+import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
-import com.mata.model.auth.dto.ChangePasswordDto;
-import com.mata.model.auth.dto.LoginByCodeDto;
-import com.mata.model.auth.dto.LoginByPasswordDto;
+import com.mata.model.auth.dto.*;
 import com.mata.model.auth.service.AuthService;
+import com.mata.pojo.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -73,5 +76,16 @@ public class AuthController {
     @PostMapping("/admin/login")
     public Result<String> adminLogin(@RequestBody @Validated LoginByPasswordDto loginDto) {
         return authService.adminLogin(loginDto.getAccount(),loginDto.getPassword());
+    }
+
+
+    /**
+     * 注册管理员
+     */
+    @PostMapping("/admin")
+    @SaCheckLogin
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
+    public Result<User> registerAdmin(@RequestBody @Validated RegisterAdminDto registerAdminDto){
+        return authService.registerAdmin(registerAdminDto);
     }
 }

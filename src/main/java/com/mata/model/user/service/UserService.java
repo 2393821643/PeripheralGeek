@@ -1,6 +1,9 @@
 package com.mata.model.user.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.mata.common.result.PageResult;
+import com.mata.model.user.dto.AdminUpdateDto;
+import com.mata.model.user.dto.UserConditionDto;
 import com.mata.model.user.dto.ReceiptInformationDto;
 import com.mata.common.result.Result;
 import com.mata.model.user.dto.UserUpdateDto;
@@ -47,4 +50,19 @@ public interface UserService extends IService<User> {
      * 获取用户默认收获信息
      */
     Result<ReceiptInformation> getReceiptInformation();
+
+    /**
+     * 查看管理员列表
+     */
+    Result<PageResult<User>> adminList(UserConditionDto userConditionDto);
+
+    /**
+     * 修改管理员信息
+     */
+    Result updateAdmin(AdminUpdateDto adminUpdateDto);
+
+    /**
+     * 删除管理员账号
+     */
+    Result deleteAdmin(Integer userId);
 }

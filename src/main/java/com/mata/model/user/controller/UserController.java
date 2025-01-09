@@ -1,7 +1,12 @@
 package com.mata.model.user.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaMode;
 import cn.dev33.satoken.stp.StpUtil;
+import com.mata.common.result.PageResult;
+import com.mata.model.user.dto.AdminUpdateDto;
+import com.mata.model.user.dto.UserConditionDto;
 import com.mata.model.user.dto.ReceiptInformationDto;
 import com.mata.common.result.Result;
 import com.mata.model.user.dto.UserUpdateDto;
@@ -85,6 +90,37 @@ public class UserController {
     public Result<String> updateUserHeader(@RequestParam("img") MultipartFile img){
         return userService.updateUserHeader(img);
     }
+
+    /**
+     * 查看管理员列表
+     */
+    @PostMapping("/admin/list")
+    @SaCheckLogin
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
+    public Result<PageResult<User>> adminList(@RequestBody UserConditionDto userConditionDto){
+        return userService.adminList(userConditionDto);
+    }
+
+    /**
+     * 修改管理员信息
+     */
+    @PutMapping("/admin")
+    @SaCheckLogin
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
+    public Result updateAdmin(@RequestBody @Validated AdminUpdateDto adminUpdateDto){
+        return userService.updateAdmin(adminUpdateDto);
+    }
+
+    /**
+     * 删除管理员账号
+     */
+    @DeleteMapping("/admin/{userId}")
+    @SaCheckLogin
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
+    public Result deleteAdmin(@PathVariable("userId") Integer userId){
+        return userService.deleteAdmin(userId);
+    }
+
 
 
 }

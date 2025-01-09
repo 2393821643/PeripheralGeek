@@ -2,6 +2,7 @@ package com.mata.model.article.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaMode;
 import com.mata.common.result.Result;
 import com.mata.model.article.service.RecommendArticleService;
 import com.mata.model.article.vo.RecommendArticleVo;
@@ -24,7 +25,7 @@ public class RecommendArticleController {
      * 新增推荐文章
      */
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     @PostMapping("/{articleId}")
     public Result addRecommendArticle(@PathVariable("articleId") Long articleId) {
         return recommendArticleService.addRecommendArticle(articleId);
@@ -43,7 +44,7 @@ public class RecommendArticleController {
      */
     @DeleteMapping("/{articleId}")
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     public Result deleteRecommendArticle(@PathVariable("articleId") Long articleId){
         return recommendArticleService.deleteRecommendArticle(articleId);
     }

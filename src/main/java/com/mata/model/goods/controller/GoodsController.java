@@ -2,6 +2,7 @@ package com.mata.model.goods.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaMode;
 import com.mata.common.result.Suggest;
 import com.mata.model.goods.dto.GoodsAddDto;
 import com.mata.model.goods.dto.GoodsConditionDto;
@@ -28,7 +29,7 @@ public class GoodsController {
      */
     @PostMapping("/admin")
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     public Result addGoods(@Validated GoodsAddDto goodsAddDto) {
         return goodsService.addGoods(goodsAddDto);
     }
@@ -38,7 +39,7 @@ public class GoodsController {
      */
     @DeleteMapping("/admin/{goodsId}")
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     public Result deleteGoods(@PathVariable("goodsId") Long goodId){
         return goodsService.deleteGoods(goodId);
     }
@@ -48,7 +49,7 @@ public class GoodsController {
      */
     @PutMapping("/admin")
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     public Result updateGoods(@RequestBody @Validated GoodsUpdateDto goodsUpdateDto){
         return goodsService.updateGoods(goodsUpdateDto);
     }
@@ -58,7 +59,7 @@ public class GoodsController {
      */
     @PutMapping("/admin/img/{goodsId}")
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     public Result<String> updateGoodsImg(@PathVariable("goodsId")Long goodsId, @RequestParam MultipartFile goodsImg){
         return goodsService.updateGoodsImg(goodsId,goodsImg);
     }
@@ -68,7 +69,7 @@ public class GoodsController {
      */
     @PutMapping("/admin/introduction/{goodsId}")
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     public Result<String> updateGoodsIntroduction(@PathVariable("goodsId")Long goodsId, @RequestParam String goodsIntroduction){
         return goodsService.updateGoodsInformation(goodsId,goodsIntroduction);
     }
@@ -102,7 +103,7 @@ public class GoodsController {
      */
     @PostMapping("/admin/list")
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     public Result<PageResult<Goods>> getGoodsToAdmin( @RequestBody GoodsConditionDto goodsConditionDto){
         return goodsService.getGoodsToAdmin(goodsConditionDto);
     }

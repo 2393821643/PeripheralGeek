@@ -2,6 +2,7 @@ package com.mata.model.order.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaMode;
 import com.mata.model.order.dto.BuyMessageDto;
 import com.mata.common.result.PageResult;
 import com.mata.common.result.Result;
@@ -87,7 +88,7 @@ public class OrderController {
      */
     @PutMapping("/admin/shipments")
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     public Result updateOrderState(@RequestBody @Validated OrderShipmentDto orderShipmentDto) {
         return orderService.updateOrderState(orderShipmentDto);
     }
@@ -97,7 +98,7 @@ public class OrderController {
      */
     @PostMapping("/admin")
     @SaCheckLogin
-    @SaCheckRole("admin")
+    @SaCheckRole(value = {"admin","normal_admin"},mode = SaMode.OR)
     public Result<PageResult<Order>> getAdminOrderPage(@RequestBody OrderConditionDto orderConditionDto){
         return orderService.getAdminOrderPage(orderConditionDto);
     }
