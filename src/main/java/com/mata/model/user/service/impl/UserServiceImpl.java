@@ -163,7 +163,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             wrapper.eq(User::getUserId,userConditionDto.getUserId());
         }
         if (!StrUtil.isEmpty(userConditionDto.getUsername())){
-            wrapper.eq(User::getUsername,userConditionDto.getUsername());
+            wrapper.like(User::getUsername,userConditionDto.getUsername());
         }
 
         Page<User> page = new Page<>(userConditionDto.getPageNum(),20);
