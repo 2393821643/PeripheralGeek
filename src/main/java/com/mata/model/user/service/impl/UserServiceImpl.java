@@ -82,13 +82,19 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
      * 通过用户名查找用户
      */
     @Override
-    public Result<List<User>> getUserInformationByName(String username) {
+    public Result<PageResult<User>> getUserInformationByName(UserConditionDto userConditionDto) {
+        if (StrUtil.isEmpty(userConditionDto.getUsername())){
+            return Result.error("搜索的用户名不能为空");
+        }
         // 查数据库
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(User::getUserId, User::getEmail, User::getSex, User::getUsername, User::getHeadUrl, User::getSign)
-                .likeRight(User::getUsername, username);
-        List<User> userList = list(wrapper);
-        return Result.success(userList);
+        wrapper.select(User::getUserId, User::getUsername, User::getHeadUrl)
+                .eq(User::getRoleId,1)
+                .likeRight(User::getUsername, userConditionDto.getUsername());
+        Page<User> page = new Page<>(userConditionDto.getPageNum(),21);
+        Page<User> resultPage = this.page(page, wrapper);
+        PageResult<User> pageResult = new PageResult<>(resultPage.getTotal(), resultPage.getRecords());
+        return Result.success(pageResult);
     }
 
     /**

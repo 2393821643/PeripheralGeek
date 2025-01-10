@@ -29,7 +29,7 @@ public class Goods {
     private Integer goodsCount;  // 商品数量
 
     @TableField("goods_price")
-    private Double goodsPrice; // 商品数量
+    private Double goodsPrice; // 商品价格
 
     @TableField("goods_connect_type")
     private String goodsConnectionType; // 商品连接方式

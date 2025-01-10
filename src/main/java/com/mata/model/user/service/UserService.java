@@ -33,7 +33,7 @@ public interface UserService extends IService<User> {
     /**
      * 通过用户名查用户信息
      */
-    Result<List<User>> getUserInformationByName(String username);
+    Result<PageResult<User>> getUserInformationByName(UserConditionDto userConditionDto);
 
     /**
      * 修改用户头像

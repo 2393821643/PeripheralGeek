@@ -77,9 +77,9 @@ public class UserController {
     /**
      * 通过用户名查找用户
      */
-    @GetMapping("/information/name")
-    public Result<List<User>> getUserInformationByName(@RequestParam("username") String username){
-        return userService.getUserInformationByName(username);
+    @PostMapping("/information/name")
+    public Result<PageResult<User>> getUserInformationByName(@RequestBody UserConditionDto userConditionDto){
+        return userService.getUserInformationByName(userConditionDto);
     }
 
     /**

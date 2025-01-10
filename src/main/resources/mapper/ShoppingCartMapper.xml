@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mata.model.shoppingCart.dao.ShoppingCartDao">
+
+
+    <select id="getShoppingCartList" resultType="com.mata.model.shoppingCart.vo.ShoppingCartVo">
+        SELECT sc.*,g.goods_name,g.goods_price,g.goods_url
+        FROM tb_shopping_cart sc
+                 INNER JOIN tb_goods g
+                            ON sc.goods_id = g.goods_id
+        <where>
+            sc.user_id = #{shoppingCartSearchDto.userId}
+        </where>
+        <if test=" shoppingCartSearchDto.goodsName != null and shoppingCartSearchDto.goodsName != '' ">
+            AND g.goods_name LIKE CONCAT("%",#{shoppingCartSearchDto.goodsName},"%")
+        </if>
+    </select>
+</mapper>
