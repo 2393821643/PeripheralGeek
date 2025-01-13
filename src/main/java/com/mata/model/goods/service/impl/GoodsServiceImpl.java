@@ -36,11 +36,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -160,6 +159,10 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
         goods.setGoodsPrice(goodsUpdateDto.getGoodsPrice());
         updateGoodsToMysql(goods);
         updateGoodsToEs(goods);
+        // 将商品数量添加到缓存
+        if (goodsUpdateDto.getGoodsCount() != null) {
+            stringRedisTemplate.opsForValue().set(RedisCommonKey.GOODS_COUNT_PRE_KEY + goodsUpdateDto.getGoodsId(), goodsUpdateDto.getGoodsCount().toString(), RedisCommonKey.GOODS_COUNT_TIME, TimeUnit.MINUTES);
+        }
         return Result.success("修改成功");
     }
 
@@ -201,7 +204,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
         goods.setGoodsUrl(imgUrl);
         goodsDocDao.updateGoodsFile(goods, CosFileMkdir.GoodsImg);
         updateGoodsToMysql(goods);
-        return Result.success(imgUrl,"修改图片成功");
+        return Result.success(imgUrl, "修改图片成功");
     }
 
     /**
@@ -225,7 +228,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
         goodsDocDao.updateGoodsFile(goods, CosFileMkdir.GoodsImg);
         updateGoodsToMysql(goods);
         goodsDocDao.updateGoodsFile(goods, CosFileMkdir.GoodsHtmlImg);
-        return Result.success(imgInfomationUrl,"修改商品介绍成功");
+        return Result.success(imgInfomationUrl, "修改商品介绍成功");
     }
 
     /**
@@ -306,11 +309,45 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsDao, Goods> implements Go
             wrapper.like(Goods::getGoodsName, goodsConditionDto.getGoodsName());
         }
         if (goodsConditionDto.getGoodsId() != null) {
-            wrapper.eq(Goods::getGoodsId,goodsConditionDto.getGoodsId());
+            wrapper.eq(Goods::getGoodsId, goodsConditionDto.getGoodsId());
         }
         Page<Goods> page = Page.of(goodsConditionDto.getPageNum(), 20);
         Page<Goods> resultGoods = this.page(page, wrapper);
-        PageResult<Goods> goodsPageResult = new PageResult<>(resultGoods.getTotal(),resultGoods.getRecords());
+        List<Goods> goodsList = resultGoods.getRecords();
+        // 获取实时的商品数量
+        List<Long> goodsIdList = goodsList.stream()
+                .map(Goods::getGoodsId)
+                .toList();
+        Map<Long, String> goodsCountCache = getGoodsCountCache(goodsIdList);
+        // 对应id赋值库存
+        for (Goods goods : goodsList) {
+            Long goodsId = goods.getGoodsId();
+            // 检查goodsCountCache中是否有对应goodsId的记录，并且该记录的值不为null
+            if (goodsCountCache.containsKey(goodsId) && goodsCountCache.get(goodsId) != null) {
+                // 获取对应的value并赋值给当前Goods对象的goodsCount属性
+                String goodsCount = goodsCountCache.get(goodsId);
+                goods.setGoodsCount(Integer.valueOf(goodsCount));
+            }
+        }
+        PageResult<Goods> goodsPageResult = new PageResult<>(resultGoods.getTotal(), goodsList);
         return Result.success(goodsPageResult);
+    }
+
+    // 批量获取商品数量缓存
+    private Map<Long,String> getGoodsCountCache(List<Long> goodsIds){
+        List<String> keys = goodsIds.stream()
+                .map(goodsId -> "goods:count:" + goodsId)
+                .toList();
+
+        // 使用StringRedisTemplate执行批量获取操作
+        List<String> results = stringRedisTemplate.opsForValue().multiGet(new HashSet<>(keys));
+
+        // 将结果映射到一个Map中
+        Map<Long, String> resultMap = new HashMap<>();
+        int index = 0;
+        for (Long goodsId : goodsIds) {
+                resultMap.put(goodsId, results.get(index++));
+        }
+        return resultMap;
     }
 }

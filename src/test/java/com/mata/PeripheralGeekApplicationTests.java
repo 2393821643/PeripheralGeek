@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.ListOperations;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -42,10 +43,9 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @SpringBootTest
 @Slf4j
@@ -244,6 +244,27 @@ class PeripheralGeekApplicationTests {
         client.bulk(request, RequestOptions.DEFAULT);
     }
 
+    @Test
+    public void testR(){
+        // 创建一个与 Redis 进行通信的连接
+        List<Long> goodsIds = new ArrayList<>();
+        goodsIds.add(1829129094807257088L);
+        goodsIds.add(1829129094807257081L);
+        List<String> keys = goodsIds.stream()
+                .map(goodsId -> "goods:count:" + goodsId)
+                .toList();
+
+        // 使用StringRedisTemplate执行批量获取操作
+        List<String> results = stringRedisTemplate.opsForValue().multiGet(new HashSet<>(keys));
+
+        // 将结果映射到一个Map中
+        Map<Long, String> resultMap = new HashMap<>();
+        int index = 0;
+        for (Long goodsId : goodsIds) {
+            resultMap.put(goodsId, results.get(index++));
+        }
+        System.out.println(resultMap);
+    }
 
 
 }
