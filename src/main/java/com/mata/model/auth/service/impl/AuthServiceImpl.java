@@ -156,7 +156,7 @@ public class AuthServiceImpl implements AuthService {
         // 设置密码 加密
         user.setPassword(SmUtil.sm3(password));
         String userJson = JSONUtil.toJsonStr(user);
-        rabbitTemplate.convertAndSend("UserExchange", "changeUserKey", userJson);
+        userDao.updateById(user);
         return Result.success("修改成功");
     }
 

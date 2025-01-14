@@ -7,10 +7,10 @@ spring:
   application:
     name: PeripheralGeek
   profiles:
-    active: dev
+    active: pro
 
   datasource:
-    url: jdbc:mysql://${mata.mysql.ip}:${mata.mysql.port}/${mata.mysql.db}?useSSL=false
+    url: jdbc:mysql://${mata.mysql.ip}:${mata.mysql.port}/${mata.mysql.db}?useSSL=false&serverTimezone=Asia/Shanghai
     username: ${mata.mysql.username}
     password: ${mata.mysql.password}
     driver-class-name: com.mysql.cj.jdbc.Driver
