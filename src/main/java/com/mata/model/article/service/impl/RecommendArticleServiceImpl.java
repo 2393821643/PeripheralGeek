@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class RecommendArticleServiceImpl extends ServiceImpl<RecommendArticleDao, RecommendArticle> implements RecommendArticleService {
@@ -59,6 +60,7 @@ public class RecommendArticleServiceImpl extends ServiceImpl<RecommendArticleDao
         List<RecommendArticleVo> recommendArticleList = listOperations.range(RedisCommonKey.RECOMMEND_ARTICLE_LIST_KEY, 0, -1);
         if (recommendArticleList.isEmpty()){
             recommendArticleList = baseMapper.getAllRecommendArticle();
+            rebuildCache();
         }
         return Result.success(recommendArticleList);
     }
@@ -86,5 +88,7 @@ public class RecommendArticleServiceImpl extends ServiceImpl<RecommendArticleDao
         List<RecommendArticleVo> allRecommendArticle = baseMapper.getAllRecommendArticle();
         ListOperations<String, RecommendArticleVo> listOperations = redisTemplate.opsForList();
         listOperations.leftPushAll(RedisCommonKey.RECOMMEND_ARTICLE_LIST_KEY,allRecommendArticle);
+        // 设置过期时间，例如3600秒即1小时
+        redisTemplate.expire(RedisCommonKey.RECOMMEND_ARTICLE_LIST_KEY, 60, TimeUnit.MINUTES);
     }
 }

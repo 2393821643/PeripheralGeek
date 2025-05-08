@@ -55,13 +55,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     private CosClientUtil cosClientUtil;
 
     @Autowired
-    private RabbitTemplate rabbitTemplate;
-
-    @Autowired
     private ArticleDocDao articleDocDao;
-
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
     private UserDao userDao;
@@ -173,7 +167,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
     @Override
     public Result<ArticleVo> getArticleById(Long articlesId) {
         ArticleVo articleVo = baseMapper.getArticleById(articlesId);
-        return Result.success(articleVo);
+        if (articleVo.getArticleState().equals("已审核")){
+            return Result.success(articleVo);
+        }else if (articleVo.getUserId().equals(StpUtil.getLoginIdAsInt())){
+            return Result.success(articleVo);
+        }
+        return Result.error("未找到此文章");
     }
 
     /**
@@ -272,13 +271,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         article.setArticleTitle(articleUpdateDto.getArticleTitle());
         article.setArticleContextUrl(articleContextUrl);
         article.setBriefIntroduction(briefIntroduction);
+        if (articleUpdateDto.getArticleState().equals("审核未通过")){
+            article.setArticleState("未审核");
+        }
         // 修改
         articleDocDao.updateArticle(new ArticleDoc(article));
         updateById(article);
         return Result.success("修改成功");
     }
     /**
-     * 修改文章图片 通过文章Id
+     * 修改文章图片 通过文章Id 返回图片url
      */
     @Override
     public Result<String> updateArticleImg(Long articleId, MultipartFile img) {
@@ -296,8 +298,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleDao, Article> impleme
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        if (article.getArticleState().equals("审核未通过")){
+            article.setArticleState("未审核");
+        }
         article.setArticleImgUrl(articleImgUrl);
         updateById(article);
+        articleDocDao.updateArticle(new ArticleDoc(article));
         return Result.success(articleImgUrl,"修改成功");
     }
 

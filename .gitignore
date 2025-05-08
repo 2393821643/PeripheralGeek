@@ -34,3 +34,4 @@ build/
 
 application-dev.yaml
 application-pro.yaml
+application-test.yaml

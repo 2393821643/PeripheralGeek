@@ -22,4 +22,6 @@ public class ArticleUpdateDto {
     @NotEmpty(message = "标题长度要大于8，小于50")
     @Length(min = 8,max = 50,message = "标题长度要大于8，小于50")
     private String articleTitle; // 文章标题
+
+    private String articleState; // 文章审核状态
 }

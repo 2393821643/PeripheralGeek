@@ -132,7 +132,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 修改密码 异步 发送到消息队列
+     * 修改密码
      *
      * @param email    邮箱
      * @param code     验证码
@@ -155,7 +155,6 @@ public class AuthServiceImpl implements AuthService {
         }
         // 设置密码 加密
         user.setPassword(SmUtil.sm3(password));
-        String userJson = JSONUtil.toJsonStr(user);
         userDao.updateById(user);
         return Result.success("修改成功");
     }
